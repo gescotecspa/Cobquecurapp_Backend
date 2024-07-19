@@ -15,12 +15,14 @@ def token_required(f):
     def decorated(*args, **kwargs):
         token = None
         if 'Authorization' in request.headers:
+            print(request.headers['Authorization'].split())
             token = request.headers['Authorization'].split()[1]
         if not token:
             return jsonify({'message': 'Token is missing!'}), 401
         try:
             data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
-            current_user = User.query.filter_by(public_id=data['public_id']).first()
+            print(data)
+            current_user = User.query.filter_by(email=data['email']).first()
         except:
             return jsonify({'message': 'Token is invalid!'}), 401
         return f(current_user, *args, **kwargs)
