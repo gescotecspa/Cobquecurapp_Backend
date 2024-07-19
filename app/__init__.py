@@ -29,8 +29,24 @@ def create_app():
     from app.auth import auth_blueprint
     app.register_blueprint(auth_blueprint)
 
-    from app.api.categorias_api import categories_blueprint
-    app.register_blueprint(categories_blueprint)
+    from app.api.promotions_api import promotion_api_blueprint
+    app.register_blueprint(promotion_api_blueprint)
+
+    from app.api.category_api import category_api_blueprint
+    app.register_blueprint(category_api_blueprint)
+
+    from app.api.role_api import role_api_blueprint
+    app.register_blueprint(role_api_blueprint)
+
+    from app.api.funcionalty_api import functionality_api_blueprint
+    app.register_blueprint(functionality_api_blueprint)
+
+    from app.api.tourist_api import tourist_api_blueprint
+    app.register_blueprint(tourist_api_blueprint)
+
+    from app.api.partner_api import partner_api_blueprint
+    app.register_blueprint(partner_api_blueprint)
+    
    # Importar modelos para asegurarse de que se reconocen al crear la base de datos
     from app.models import user, category
     # # Importar e inicializar los manejadores de errores
