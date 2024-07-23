@@ -12,7 +12,7 @@ class TouristService:
         # Crea un nuevo registro de turista en la base de datos
         new_tourist = Tourist(user_id=user_id, origin=origin, birthday=birthday, gender=gender)
         db.session.add(new_tourist)
-
+        
         # Asocia las categorías con el turista mediante la tabla intermedia
         for category_id in category_ids:
             category = Category.query.get(category_id)
@@ -24,8 +24,10 @@ class TouristService:
 
     @staticmethod
     def update_tourist(user_id, origin=None, birthday=None, gender=None, category_ids=None):
-        # Encuentra el registro de turista basado en user_id y actualiza su información
+    # Encuentra el registro de turista basado en user_id y actualiza su información
+        print(user_id)
         tourist = TouristService.get_tourist_by_user_id(user_id)
+        
         if tourist:
             if origin:
                 tourist.origin = origin
@@ -37,7 +39,7 @@ class TouristService:
             # Actualiza las categorías asociadas
             if category_ids is not None:
                 # Primero limpiamos todas las relaciones existentes
-                tourist.categories.clear()
+                tourist.categories = []
                 for category_id in category_ids:
                     category = Category.query.get(category_id)
                     if category:
