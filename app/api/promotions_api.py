@@ -32,7 +32,6 @@ class PromotionListResource(Resource):
     def post(self):
         data = request.get_json()
         promotion = PromotionService.create_promotion(**data)
-        print(promotion)
         return jsonify(promotion.serialize())
 
 api.add_resource(PromotionResource, '/promotions/<int:promotion_id>')

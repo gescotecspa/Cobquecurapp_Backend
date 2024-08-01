@@ -14,6 +14,7 @@ class Partner(db.Model):
     contact_info = db.Column(db.String(255), nullable=False)
     business_type = db.Column(db.String(255))
     categories = db.relationship('Category', secondary=partner_categories, lazy='dynamic')
+    branches = db.relationship('Branch', back_populates='partner', cascade='all, delete-orphan')  # Añadir esta línea
 
     def serialize(self):
         return {

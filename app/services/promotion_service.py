@@ -1,5 +1,6 @@
 from app import db
-from app.models import Promotion, Category, PromotionImage
+from app.models.promotion import Promotion, PromotionImage
+from app.models.category import Category
 
 class PromotionService:
     @staticmethod
@@ -7,8 +8,18 @@ class PromotionService:
         return Promotion.query.get(promotion_id)
 
     @staticmethod
-    def create_promotion(title, description, start_date, expiration_date, qr_code, partner_id=None, category_ids=[], image_paths=[]):
-        new_promotion = Promotion(title=title, description=description, start_date=start_date, expiration_date=expiration_date, qr_code=qr_code, partner_id=partner_id)
+    def create_promotion(branch_id, title, description, start_date, expiration_date, qr_code, discount_percentage, available_quantity=None, partner_id=None, category_ids=[], image_paths=[]):
+        new_promotion = Promotion(
+            branch_id=branch_id,
+            title=title,
+            description=description,
+            start_date=start_date,
+            expiration_date=expiration_date,
+            qr_code=qr_code,
+            discount_percentage=discount_percentage,
+            available_quantity=available_quantity,
+            partner_id=partner_id
+        )
         db.session.add(new_promotion)
         for category_id in category_ids:
             category = Category.query.get(category_id)
@@ -21,7 +32,7 @@ class PromotionService:
         return new_promotion
 
     @staticmethod
-    def update_promotion(promotion_id, title=None, description=None, start_date=None, expiration_date=None, qr_code=None, partner_id=None, category_ids=None, image_paths=None):
+    def update_promotion(promotion_id, title=None, description=None, start_date=None, expiration_date=None, qr_code=None, discount_percentage=None, available_quantity=None, partner_id=None, branch_id=None, category_ids=None, image_paths=None):
         promotion = PromotionService.get_promotion_by_id(promotion_id)
         if promotion:
             if title:
@@ -34,8 +45,14 @@ class PromotionService:
                 promotion.expiration_date = expiration_date
             if qr_code:
                 promotion.qr_code = qr_code
+            if discount_percentage is not None:
+                promotion.discount_percentage = discount_percentage
+            if available_quantity is not None:
+                promotion.available_quantity = available_quantity
             if partner_id is not None:
                 promotion.partner_id = partner_id
+            if branch_id is not None:
+                promotion.branch_id = branch_id
             if category_ids is not None:
                 promotion.categories.clear()
                 for category_id in category_ids:

@@ -13,8 +13,8 @@ class Tourist(db.Model):
     origin = db.Column(db.String(255))
     birthday = db.Column(db.Date)
     gender = db.Column(db.String(50))
-    # Establecemos la relación sólo de Tourist hacia Category, sin backref.
     categories = db.relationship('Category', secondary=tourist_categories, lazy='dynamic')
+    favorites = db.relationship('Favorite', back_populates='tourist', cascade='all, delete-orphan', overlaps='favorite_promotions')
 
     def serialize(self):
         return {
@@ -22,9 +22,8 @@ class Tourist(db.Model):
             "origin": self.origin,
             "birthday": self.birthday.isoformat() if self.birthday else None,
             "gender": self.gender,
-            #"categories": [category.category_id for category in self.categories]
-            "categories": [{"id": category.category_id, "name": category.name} for category in self.categories]
-
+            "categories": [{"id": category.category_id, "name": category.name} for category in self.categories],
+            "favorites": [{"promotion_id": fav.promotion_id, "created_at": fav.created_at.isoformat()} for fav in self.favorites]
         }
 
     def __repr__(self):
