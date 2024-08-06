@@ -102,3 +102,6 @@ def get_average_rating(tourist_point_id):
         return {'average_rating': 'No ratings yet'}
     avg_rating = sum(r.rating for r in ratings) / len(ratings)
     return {'average_rating': avg_rating}
+
+def get_ratings_by_tourist_point(tourist_point_id):
+    return Rating.query.filter_by(tourist_point_id=tourist_point_id).all()

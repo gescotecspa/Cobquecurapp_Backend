@@ -36,6 +36,16 @@ class ImageResource(Resource):
         return jsonify(image), 201 
 
 class RatingResource(Resource):
+    
+    def get(self, id):
+        """
+        Obtener todas las valoraciones de un punto turístico específico.
+        """
+        ratings = tourist_point_service.get_ratings_by_tourist_point(id)
+        if not ratings:
+            return {'message': 'No ratings found for this tourist point.'}, 404
+        return jsonify([rating.serialize() for rating in ratings])
+    
     def post(self, id):
         data = request.get_json()
         rating = tourist_point_service.add_rating(id, data['tourist_id'], data['rating'], data.get('comment'))
