@@ -16,6 +16,8 @@ class User(db.Model):
     status = db.Column(db.String(20), nullable=False)
     subscribed_to_newsletter = db.Column(db.Boolean)
     image_url = db.Column(db.String(250))
+    reset_code = db.Column(db.String(8), nullable=True)
+    reset_code_expiration = db.Column(db.DateTime, nullable=True)
 
     def serialize(self):
         return {

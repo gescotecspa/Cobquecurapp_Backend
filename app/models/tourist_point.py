@@ -46,6 +46,7 @@ class Rating(db.Model):
     comment = db.Column(db.String(1000))
     tourist_point_id = db.Column(db.Integer, db.ForeignKey('tourist_points.id'), nullable=False)
     tourist_id = db.Column(db.Integer, db.ForeignKey('tourists.user_id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=True)
     
     def serialize(self):
         return {
@@ -53,7 +54,8 @@ class Rating(db.Model):
             'tourist_point_id': self.tourist_point_id,
             'tourist_id': self.tourist_id,
             'rating': self.rating,
-            'comment': self.comment
+            'comment': self.comment,
+            'created_at': self.created_at.isoformat()  # Formatear la fecha en ISO 8601
         }
 
     __table_args__ = (

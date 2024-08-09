@@ -2,6 +2,10 @@ from app.models.user import User
 from app import db
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash
+from ..common.email_utils import send_email
+from flask import render_template
+from ..common.pdf_utils import generate_pdf
+
 class UserService:
     @staticmethod
     def get_user_by_id(user_id):
@@ -26,6 +30,17 @@ class UserService:
         db.session.add(new_user)
         try:
             db.session.commit()
+            
+            # Generar PDF con QR
+            pdf_buffer = generate_pdf(f"{first_name} {last_name}", email)
+            pdf_filename = f"Credential_{first_name}_{last_name}.pdf"
+            
+            # Enviar correo electrónico de bienvenida usando una plantilla HTML
+            subject = "Welcome to Our Service"
+            recipients = [email]
+            html_body = render_template('email/welcome_email.html', email=email, first_name=first_name)
+            send_email(subject, recipients, html_body, pdf_buffer, pdf_filename)
+
         except IntegrityError:
             db.session.rollback()
             raise ValueError("A database error occurred, possibly duplicated data.")

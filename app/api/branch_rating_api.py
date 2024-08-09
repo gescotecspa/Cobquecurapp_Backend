@@ -42,14 +42,14 @@ class BranchRatingUpdateResource(Resource):
 
 class BranchRatingsListResource(Resource):
     def get(self, branch_id):
-        ratings = BranchRatingService.get_all_ratings_for_branch(branch_id)
-        if not ratings:
+        ratings_with_names = BranchRatingService.get_all_ratings_for_branch(branch_id)
+        if not ratings_with_names:
             return {'message': 'No ratings found for this branch'}, 404
 
         avg_rating = BranchRatingService.get_average_rating_for_branch(branch_id)
         
         response = {
-            'ratings': [rating.serialize() for rating in ratings],
+            'ratings': [rating.serialize(first_name) for rating, first_name in ratings_with_names],
             'average_rating': avg_rating
         }
         return response, 200
