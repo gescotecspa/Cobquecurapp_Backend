@@ -68,6 +68,8 @@ def add_rating(tourist_point_id, tourist_id, rating, comment=None):
     
     if existing_rating:
         return {'message': 'You have already rated this tourist point'}, 400  
+    
+    # Crear la nueva calificación
     new_rating = Rating(
         tourist_point_id=tourist_point_id,
         tourist_id=tourist_id,
@@ -76,6 +78,7 @@ def add_rating(tourist_point_id, tourist_id, rating, comment=None):
     )
     db.session.add(new_rating)
     db.session.commit()
+    
     return new_rating.serialize()
 
 def delete_rating(rating_id):

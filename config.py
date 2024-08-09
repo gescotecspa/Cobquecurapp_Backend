@@ -3,7 +3,7 @@ import os
 
 # Carga las variables de entorno desde el archivo .env
 load_dotenv()
-print(os.getenv('SQLALCHEMY_DATABASE_URI'))
+# print(os.getenv('SQLALCHEMY_DATABASE_URI'))
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY')
     SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI')
