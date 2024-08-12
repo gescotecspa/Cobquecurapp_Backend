@@ -100,7 +100,7 @@ def reset_password_request():
     db.session.commit()
 
     # URL donde se restablecerá la contraseña
-    reset_url = "https://app-turismo-backend.vercel.app/reset_password"
+    reset_url = "https://app-turismo-cl-web.vercel.app/reset_password"
 
     subject = "Password Reset Requested"
     recipients = [email]
