@@ -109,6 +109,7 @@ package-lock.json
 
 env
 venv
+.venv
 __pycache__
 app/__pycache__
 app/api/__pycache__
