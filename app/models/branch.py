@@ -28,7 +28,7 @@ class Branch(db.Model):
             "longitude": self.longitude,
             "status": self.status,
             "image_url": self.image_url,  # Incluyendo la URL de la imagen en la serialización
-            "promotions": [promotion.serialize() for promotion in self.promotions]
+            # "promotions": [promotion.serialize() for promotion in self.promotions]
         }
 
     def __repr__(self):

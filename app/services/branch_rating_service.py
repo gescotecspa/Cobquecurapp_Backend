@@ -1,5 +1,6 @@
 from app import db
 from app.models import BranchRating
+from app.models.user import User
 
 class BranchRatingService:
     @staticmethod
@@ -49,8 +50,8 @@ class BranchRatingService:
             raise e
     @staticmethod
     def get_all_ratings_for_branch(branch_id):
-        return BranchRating.query.filter_by(branch_id=branch_id).all()
-    
+        return db.session.query(BranchRating, User.first_name).join(User, BranchRating.user_id == User.user_id).filter(BranchRating.branch_id == branch_id).all()
+
     @staticmethod
     def get_average_rating_for_branch(branch_id):
         ratings = BranchRating.query.filter_by(branch_id=branch_id).all()
