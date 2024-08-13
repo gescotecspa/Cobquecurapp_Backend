@@ -122,5 +122,15 @@ class PromotionService:
         return False
 
     @staticmethod
-    def get_all_promotions():
-        return Promotion.query.all()
+    def get_all_promotions(retries=2, delay=3):
+        attempt = 0
+        while attempt < retries:
+            try:
+                # Intentar obtener todas las promociones
+                return Promotion.query.all()
+            except OperationalError as e:
+                attempt += 1
+                print(f"Error de conexión: {e}. Reintentando {attempt}/{retries}...")
+                sleep(delay)  # Esperar un poco antes de reintentar
+        # Si después de varios intentos no se logra, lanzar la excepción
+        raise OperationalError(f"Fallo después de {retries} intentos")

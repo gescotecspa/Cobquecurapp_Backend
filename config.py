@@ -1,6 +1,16 @@
+from dotenv import load_dotenv
+import os
+
+# Carga las variables de entorno desde el archivo .env
+load_dotenv()
+# print(os.getenv('SQLALCHEMY_DATABASE_URI'))
 class Config:
-    SECRET_KEY = 'tu_llave_secreta'
-    # SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:javiMono1981@localhost:5432/AppTurismo_DB'
+    SECRET_KEY = os.getenv('SECRET_KEY')
+    SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI')
     
-    # NEON coneccion
-    SQLALCHEMY_DATABASE_URI = 'postgresql://AppTurismo_DB_owner:v9GxYRWcKw7j@ep-soft-tree-a5w6w6eq.us-east-2.aws.neon.tech/AppTurismo_DB?sslmode=require'
+    # Configuración de SMTP
+    SMTP_SERVER = os.getenv('SMTP_SERVER')
+    SMTP_PORT = int(os.getenv('SMTP_PORT', 587))  # Convierte a entero, con valor por defecto 587
+    SMTP_USERNAME = os.getenv('SMTP_USERNAME')
+    SMTP_PASSWORD = os.getenv('SMTP_PASSWORD')
+    SMTP_DEFAULT_SENDER = os.getenv('SMTP_DEFAULT_SENDER')

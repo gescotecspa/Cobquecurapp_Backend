@@ -50,6 +50,18 @@ def create_app():
     
     from app.api.branches_api import branch_api_blueprint
     app.register_blueprint(branch_api_blueprint)
+    
+    from app.api.tourist_point_api import tourist_point_api_blueprint
+    app.register_blueprint(tourist_point_api_blueprint)
+    
+    from app.api.branch_rating_api import branch_rating_api_blueprint
+    app.register_blueprint(branch_rating_api_blueprint)
+
+    from app.api.tourist_rating_api import tourist_rating_api_blueprint
+    app.register_blueprint(tourist_rating_api_blueprint)
+    
+    from app.api.countries_api import countries_api_blueprint
+    app.register_blueprint(countries_api_blueprint)
 
     # Importar modelos para asegurarse de que se reconocen al crear la base de datos
     from app.models import user, category, tourist, partner, promotion, branch, favorite
@@ -61,5 +73,7 @@ def create_app():
     with app.app_context():
         # db.drop_all()
         db.create_all()
+        from app.services.country_service import CountryService
+        CountryService.load_countries()
 
     return app
