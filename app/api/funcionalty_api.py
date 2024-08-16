@@ -24,6 +24,7 @@ class FunctionalityResource(Resource):
             return {'message': 'Functionality deleted'}, 200
         return {'message': 'Functionality not found'}, 404
 
+
 class FunctionalityListResource(Resource):
     def get(self):
         functionalities = FunctionalityService.get_all_functionalities()
