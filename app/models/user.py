@@ -18,6 +18,7 @@ class User(db.Model):
     image_url = db.Column(db.String(250))
     reset_code = db.Column(db.String(8), nullable=True)
     reset_code_expiration = db.Column(db.DateTime, nullable=True)
+    roles = db.relationship('Role', secondary='user_roles', backref=db.backref('users', lazy='dynamic'))
 
     def serialize(self):
         return {
@@ -31,6 +32,7 @@ class User(db.Model):
             'phone_number': self.phone_number,
             'gender': self.gender,
             'status': self.status,
-          'subscribed_to_newsletter': self.subscribed_to_newsletter,
-            'image_url': self.image_url
+            'subscribed_to_newsletter': self.subscribed_to_newsletter,
+            'image_url': self.image_url,
+            "roles": [role.serialize() for role in self.roles]
         }

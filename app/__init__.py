@@ -63,8 +63,14 @@ def create_app():
     from app.api.countries_api import countries_api_blueprint
     app.register_blueprint(countries_api_blueprint)
 
+    from app.api.role_funcionality_api import role_functionality_api_blueprint
+    app.register_blueprint(role_functionality_api_blueprint)
+
+    from app.api.user_role_api import user_role_api_blueprint
+    app.register_blueprint(user_role_api_blueprint)
+    
     # Importar modelos para asegurarse de que se reconocen al crear la base de datos
-    from app.models import user, category, tourist, partner, promotion, branch, favorite
+    from app.models import user, category, tourist, partner, promotion, branch, favorite, funcionality, role_funcionality, user_role
 
     # Importar e inicializar los manejadores de errores
     # from app.common import error_handlers
