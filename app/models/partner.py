@@ -14,7 +14,7 @@ class Partner(db.Model):
     contact_info = db.Column(db.String(255), nullable=False)
     business_type = db.Column(db.String(255))
     categories = db.relationship('Category', secondary=partner_categories, lazy='dynamic')
-    branches = db.relationship('Branch', back_populates='partner', cascade='all, delete-orphan')  # Añadir esta línea
+    branches = db.relationship('Branch', back_populates='partner', cascade='all, delete-orphan')
 
     def serialize(self):
 
@@ -29,8 +29,9 @@ class Partner(db.Model):
             "address": self.address,
             "contact_info": self.contact_info,
             "business_type": self.business_type,
+            "user": user,
             "categories": [{"category_id": category.category_id, "name": category.name} for category in self.categories],
-            "user": user
+            "branches": [{"branch_id": branch.branch_id, "name": branch.name, "description": branch.description, "address": branch.address} for branch in self.branches],
         }
 
     def __repr__(self):

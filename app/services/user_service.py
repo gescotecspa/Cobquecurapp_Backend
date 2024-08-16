@@ -6,6 +6,7 @@ from ..common.email_utils import send_email
 from flask import render_template
 from ..common.pdf_utils import generate_pdf
 from ..common.image_manager import ImageManager
+import uuid
 
 class UserService:
     @staticmethod
@@ -58,7 +59,7 @@ class UserService:
             pdf_filename = f"Credential_{first_name}_{last_name}.pdf"
             
             # Enviar correo electrónico de bienvenida usando una plantilla HTML
-            subject = "Welcome to Our Service"
+            subject = "Bienvenido a nuestra aplicación! CCDT Cobquecura"
             recipients = [email]
             html_body = render_template('email/welcome_email.html', email=email, first_name=first_name)
             send_email(subject, recipients, html_body, pdf_buffer, pdf_filename)
@@ -77,7 +78,8 @@ class UserService:
                 image_data = kwargs.pop('image_data')
                 if image_data:
                     image_manager = ImageManager()
-                    filename = f"users/{user.email}/profile_image.png"
+                    unique_id = uuid.uuid4().hex
+                    filename = f"users/{user.email}/profile_image_{unique_id}.png"
                     image_url = image_manager.upload_image(image_data, filename)
                     user.image_url = image_url
             

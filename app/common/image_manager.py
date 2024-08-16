@@ -3,11 +3,16 @@ import io
 from google.cloud import storage
 from PIL import Image
 import os
+import google.auth
+from config import Config
 
 class ImageManager:
     def __init__(self):
-        self.bucket_name = os.getenv('GCS_BUCKET_NAME', 'turismo-app-cobquecura')
-        self.client = storage.Client()
+        self.bucket_name = Config.GCS_BUCKET_NAME
+
+        # Utiliza las credenciales desde Config.GOOGLE_CREDENTIALS
+        self.client = storage.Client.from_service_account_info(Config.GOOGLE_CREDENTIALS)
+
         self.bucket = self.client.get_bucket(self.bucket_name)
 
     def upload_image(self, image_base64, filename):

@@ -27,7 +27,7 @@ class Branch(db.Model):
             "latitude": self.latitude,
             "longitude": self.longitude,
             "status": self.status,
-            "image_url": self.image_url,  # Incluyendo la URL de la imagen en la serialización
+            "image_url": self.image_url,
             # "promotions": [promotion.serialize() for promotion in self.promotions]
         }
 
