@@ -20,10 +20,13 @@ class Promotion(db.Model):
     partner_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
     available_quantity = db.Column(db.Integer, nullable=True)
     discount_percentage = db.Column(db.Float, nullable=False) 
+    status_id = db.Column(db.Integer, db.ForeignKey('statuses.id'), nullable=False, default=1)
 
     images = db.relationship('PromotionImage', backref='promotion', lazy=True)
     categories = db.relationship('Category', secondary=promotion_categories, backref=db.backref('promotions', lazy=True))
     favorites = db.relationship('Favorite', back_populates='promotion', cascade='all, delete-orphan', overlaps='favorited_by')
+    status = db.relationship('Status', backref=db.backref('promotions', lazy=True)) 
+    # estado activa en caso de cargarse un estado
     
     def serialize(self):
 
@@ -43,7 +46,12 @@ class Promotion(db.Model):
             "branch_id": self.branch_id,
             "partner_id": self.partner_id,
             "available_quantity": self.available_quantity,
-            "discount_percentage": self.discount_percentage,  
+            "discount_percentage": self.discount_percentage,
+            "status": {
+                "id": self.status.id,
+                "name": self.status.name,
+                "description": self.status.description
+            },
             "images": [image.serialize() for image in self.images],
             "categories": [{"category_id": category.category_id, "name": category.name} for category in self.categories],
             "favorites": [{"user_id": fav.user_id, "created_at": fav.created_at.isoformat()} for fav in self.favorites],

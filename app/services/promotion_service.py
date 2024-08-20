@@ -9,7 +9,7 @@ class PromotionService:
         return Promotion.query.get(promotion_id)
 
     @staticmethod
-    def create_promotion(branch_id, title, description, start_date, expiration_date, qr_code, discount_percentage, available_quantity=None, partner_id=None, category_ids=[], images=[]):
+    def create_promotion(branch_id, title, description, start_date, expiration_date, qr_code, discount_percentage, available_quantity=None, partner_id=None, category_ids=[], images=[], status_id=None):
         # Crear la nueva promoción
         new_promotion = Promotion(
             branch_id=branch_id,
@@ -20,7 +20,8 @@ class PromotionService:
             qr_code=qr_code,
             discount_percentage=discount_percentage,
             available_quantity=available_quantity,
-            partner_id=partner_id
+            partner_id=partner_id,
+            status_id=status_id if status_id is not None else 1
         )
         db.session.add(new_promotion)
 
@@ -51,7 +52,7 @@ class PromotionService:
         return new_promotion
 
     @staticmethod
-    def update_promotion(promotion_id, title=None, description=None, start_date=None, expiration_date=None, qr_code=None, discount_percentage=None, available_quantity=None, partner_id=None, branch_id=None, category_ids=None, images=None):
+    def update_promotion(promotion_id, title=None, description=None, start_date=None, expiration_date=None, qr_code=None, discount_percentage=None, available_quantity=None, partner_id=None, branch_id=None, category_ids=None, images=None, status_id=None):
         # Obtener la promoción existente
         promotion = PromotionService.get_promotion_by_id(promotion_id)
         if promotion:
@@ -74,7 +75,9 @@ class PromotionService:
                 promotion.partner_id = partner_id
             if branch_id is not None:
                 promotion.branch_id = branch_id
-
+            if status_id is not None:
+                promotion.status_id = status_id
+            
             # Actualizar las categorías si se proporcionan nuevas
             if category_ids is not None:
                 promotion.categories.clear()
