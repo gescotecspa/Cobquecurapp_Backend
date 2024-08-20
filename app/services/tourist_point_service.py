@@ -1,5 +1,6 @@
 from app.models import TouristPoint, Image, Rating
 from app import db
+from ..common.image_manager import ImageManager
 
 def create_tourist_point(data):
     tourist_point = TouristPoint(
@@ -14,8 +15,11 @@ def create_tourist_point(data):
     
     # Agregar imágenes si se proporcionan
     if 'images' in data:
-        for image_path in data['images']:
-            image = Image(image_path=image_path, tourist_point_id=tourist_point.id)
+        image_manager = ImageManager()
+        for image_data in data['images']:
+            filename = f"tourist_points/{tourist_point.id}/{image_data['filename']}"
+            image_url = image_manager.upload_image(image_data['data'], filename)
+            image = Image(image_path=image_url, tourist_point_id=tourist_point.id)
             db.session.add(image)
     
     db.session.commit()
@@ -38,8 +42,11 @@ def update_tourist_point(tourist_point_id, data):
     
     # Agregar nuevas imágenes
     if 'images' in data:
-        for image_path in data['images']:
-            image = Image(image_path=image_path, tourist_point_id=tourist_point_id)
+        image_manager = ImageManager()
+        for image_data in data['images']:
+            filename = f"tourist_points/{tourist_point.id}/{image_data['filename']}"
+            image_url = image_manager.upload_image(image_data['data'], filename)
+            image = Image(image_path=image_url, tourist_point_id=tourist_point_id)
             db.session.add(image)
     
     db.session.commit()
@@ -49,16 +56,20 @@ def get_all_tourist_points():
     tourist_points = TouristPoint.query.all()
     return [tp.serialize() for tp in tourist_points]
 
-
 def get_tourist_point_by_id(tourist_point_id):
     tourist_point = TouristPoint.query.get(tourist_point_id)
     return tourist_point.serialize() if tourist_point else None
 
-def add_image(tourist_point_id, image_path):
-    image = Image(image_path=image_path, tourist_point_id=tourist_point_id)
+def add_image(tourist_point_id, image_data):
+    image_manager = ImageManager()
+    filename = f"tourist_points/{tourist_point_id}/{image_data['filename']}"
+    image_url = image_manager.upload_image(image_data['data'], filename)
+    
+    image = Image(image_path=image_url, tourist_point_id=tourist_point_id)
     db.session.add(image)
     db.session.commit()
     return image.serialize()  # Devuelve el resultado serializado
+
 def add_rating(tourist_point_id, tourist_id, rating, comment=None):
     # Verificar si el turista ya ha calificado este punto turístico
     existing_rating = Rating.query.filter_by(
@@ -66,7 +77,7 @@ def add_rating(tourist_point_id, tourist_id, rating, comment=None):
         tourist_id=tourist_id
     ).first()
     
-    if existing_rating:
+    if (existing_rating):
         return {'message': 'You have already rated this tourist point'}, 400  
     
     # Crear la nueva calificación

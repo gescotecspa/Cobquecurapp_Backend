@@ -14,6 +14,12 @@ class TouristPointResource(Resource):
 
     def put(self, id):
         data = request.get_json()
+        # Extraer datos de las imágenes si existen
+        images = data.pop('images', [])
+        for image in images:
+            image['data'] = image.get('data')
+            image['filename'] = image.get('filename')
+
         updated_tourist_point = tourist_point_service.update_tourist_point(id, data)
         if updated_tourist_point:
             return updated_tourist_point  # El objeto ya está serializado
@@ -26,13 +32,20 @@ class TouristPointListResource(Resource):
 
     def post(self):
         data = request.get_json()
+        # Extraer datos de las imágenes si existen
+        images = data.pop('images', [])
+        for image in images:
+            image['data'] = image.get('data')
+            image['filename'] = image.get('filename')
+        
         tourist_point = tourist_point_service.create_tourist_point(data)
         return tourist_point.serialize(), 201  
 
 class ImageResource(Resource):
     def post(self, id):
         data = request.get_json()
-        image = tourist_point_service.add_image(id, data['image_path'])
+        # Manejo de la imagen usando ImageManager
+        image = tourist_point_service.add_image(id, data['image'])
         return image, 201 
 
 class RatingResource(Resource):
@@ -58,14 +71,12 @@ class RatingDetailResource(Resource):
             return {'message': 'Rating not found'}, 404
         return {'message': 'Rating deleted successfully'}, 200  # Mensaje de confirmación
 
-
     def put(self, rating_id):
         data = request.get_json()
         rating = tourist_point_service.update_rating(rating_id, data)
         if rating is None:
             return {'message': 'Rating not found'}, 404
         return rating
-
 
 class AverageRatingResource(Resource):
     def get(self, id):

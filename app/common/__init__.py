@@ -1,5 +1,6 @@
 
 from .error_handlers import handle_invalid_usage
+from .image_manager import ImageManager
 
 def init_app(app):
     app.register_error_handler(InvalidUsage, handle_invalid_usage)
