@@ -1,5 +1,6 @@
 from app import db
 from app.models.branch import Branch
+from ..common.image_manager import ImageManager
 
 class BranchService:
     @staticmethod
@@ -7,7 +8,14 @@ class BranchService:
         return Branch.query.get(branch_id)
 
     @staticmethod
-    def create_branch(partner_id, name, description, address, latitude, longitude, status, image_url=None):
+    def create_branch(partner_id, name, description, address, latitude, longitude, status, image_data=None):
+        # Manejo de la imagen con ImageManager
+        image_url = None
+        if image_data:
+            image_manager = ImageManager()
+            filename = f"branches/{name.replace(' ', '_')}_image.png"
+            image_url = image_manager.upload_image(image_data, filename)
+
         new_branch = Branch(
             partner_id=partner_id,
             name=name,
@@ -23,9 +31,16 @@ class BranchService:
         return new_branch
 
     @staticmethod
-    def update_branch(branch_id, partner_id=None, name=None, description=None, address=None, latitude=None, longitude=None, status=None, image_url=None):
+    def update_branch(branch_id, partner_id=None, name=None, description=None, address=None, latitude=None, longitude=None, status=None, image_data=None):
         branch = BranchService.get_branch_by_id(branch_id)
         if branch:
+            # Manejo de la imagen con ImageManager en la actualización
+            if image_data:
+                image_manager = ImageManager()
+                filename = f"branches/{branch.name.replace(' ', '_')}_image.png"
+                image_url = image_manager.upload_image(image_data, filename)
+                branch.image_url = image_url
+
             if partner_id is not None:
                 branch.partner_id = partner_id
             if name:
@@ -40,8 +55,7 @@ class BranchService:
                 branch.longitude = longitude
             if status:
                 branch.status = status
-            if image_url:
-                branch.image_url = image_url 
+
             db.session.commit()
         return branch
 

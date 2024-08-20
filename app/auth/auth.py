@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, make_response, current_app,render_template
+from flask import Blueprint, request, jsonify, make_response, current_app, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import jwt
@@ -39,7 +39,6 @@ def login():
         return make_response('Could not verify - Missing Data', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
 
     print(data['password'])
-    #user = User.query.filter_by(email=data['email']).first()
     user = UserService.get_user_by_email(data['email'])
     print(user.password)
 
@@ -57,12 +56,16 @@ def login():
 
 @auth_blueprint.route('/signup', methods=['POST'])
 def signup():
-        data = request.get_json()
-        try:
-            user = UserService.create_user(**data)
-            return jsonify(user.serialize()), 201
-        except ValueError as e:
-             return {'message': str(e)}, 400
+    data = request.get_json()
+    
+    # Extraer datos de la imagen si existen
+    image_data = data.pop('image_data', None)
+    
+    try:
+        user = UserService.create_user(**data, image_data=image_data)
+        return jsonify(user.serialize()), 201
+    except ValueError as e:
+        return {'message': str(e)}, 400
 
 @auth_blueprint.route('/user', methods=['GET'])
 @token_required
@@ -71,13 +74,16 @@ def get_user(current_user):
 
 @auth_blueprint.route('/user/<int:user_id>', methods=['PUT'])
 @token_required
-def update_user(self, user_id):
-        data = request.get_json()
-        user = UserService.update_user(user_id, **data)
-        if user:
-            return jsonify(user.serialize())
-        return {'message': 'User not found'}, 404
-
+def update_user(current_user, user_id):
+    data = request.get_json()
+    
+    # Extraer datos de la imagen si existen
+    image_data = data.pop('image_data', None)
+    
+    user = UserService.update_user(user_id, **data, image_data=image_data)
+    if user:
+        return jsonify(user.serialize())
+    return {'message': 'User not found'}, 404
 
 # Reestablecer contraseña
 
@@ -131,3 +137,9 @@ def reset_password():
     db.session.commit()
 
     return jsonify({'message': 'Password has been reset'}), 200
+
+@auth_blueprint.route('/users', methods=['GET'])
+@token_required
+def get_all_users(current_user):
+    users = UserService.get_all_users()
+    return jsonify([user.serialize() for user in users])

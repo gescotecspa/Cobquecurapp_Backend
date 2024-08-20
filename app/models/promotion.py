@@ -1,5 +1,6 @@
 from app import db
 from .favorite import Favorite
+from .partner import Partner  # Importa la definición de Partner
 
 promotion_categories = db.Table('promotion_categories',
     db.Column('promotion_id', db.Integer, db.ForeignKey('promotions.promotion_id'), primary_key=True),
@@ -23,8 +24,15 @@ class Promotion(db.Model):
     images = db.relationship('PromotionImage', backref='promotion', lazy=True)
     categories = db.relationship('Category', secondary=promotion_categories, backref=db.backref('promotions', lazy=True))
     favorites = db.relationship('Favorite', back_populates='promotion', cascade='all, delete-orphan', overlaps='favorited_by')
-
+    
     def serialize(self):
+
+        partner_details = None
+        if self.partner_id:
+            partner = Partner.query.get(self.partner_id)
+            if partner:
+                partner_details = partner.serialize()
+
         return {
             "promotion_id": self.promotion_id,
             "title": self.title,
@@ -38,7 +46,8 @@ class Promotion(db.Model):
             "discount_percentage": self.discount_percentage,  
             "images": [image.serialize() for image in self.images],
             "categories": [{"category_id": category.category_id, "name": category.name} for category in self.categories],
-            "favorites": [{"user_id": fav.user_id, "created_at": fav.created_at.isoformat()} for fav in self.favorites]
+            "favorites": [{"user_id": fav.user_id, "created_at": fav.created_at.isoformat()} for fav in self.favorites],
+            "partner_details": partner_details  # Agregando detalles del partner
         }
 
     def __repr__(self):

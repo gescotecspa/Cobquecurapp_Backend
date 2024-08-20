@@ -11,6 +11,11 @@ from app.models.tourist_point import TouristPoint, Image, Rating
 from app.models.branch_rating import BranchRating
 from app.models.tourist_rating import TouristRating
 from app.models.country import Country
+from app.models.user_role import UserRole
+from app.models.role_funcionality import RoleFunctionality
+from app.models.role import Role
+from app.models.status import Status
+
 # Importa aquí otros modelos a medida que los crees
 
 # Si necesitas inicializar algo específicamente para los modelos, puedes hacerlo aquí.

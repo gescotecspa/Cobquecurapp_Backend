@@ -14,7 +14,10 @@ class BranchResource(Resource):
 
     def put(self, branch_id):
         data = request.get_json()
-        branch = BranchService.update_branch(branch_id, **data)
+        # Extraer datos de la imagen si existen
+        image_data = data.pop('image_data', None)
+
+        branch = BranchService.update_branch(branch_id, **data, image_data=image_data)
         if branch:
             return jsonify(branch.serialize())
         return {'message': 'Branch not found'}, 404
@@ -31,7 +34,10 @@ class BranchListResource(Resource):
 
     def post(self):
         data = request.get_json()
-        branch = BranchService.create_branch(**data)
+        # Extraer datos de la imagen si existen
+        image_data = data.pop('image_data', None)
+
+        branch = BranchService.create_branch(**data, image_data=image_data)
         return jsonify(branch.serialize())
 
 api.add_resource(BranchResource, '/branches/<int:branch_id>')
