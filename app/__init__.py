@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-from flask_migrate import Migrate
+# from flask_migrate import Migrate
 
 # Instancia de SQLAlchemy
 db = SQLAlchemy()
@@ -17,7 +17,7 @@ def create_app():
     db.init_app(app)
     
     # Inicializar Flask-Migrate con la aplicación Flask y la instancia de SQLAlchemy
-    migrate = Migrate(app, db)
+    # migrate = Migrate(app, db)
     
     # Habilitar CORS si es necesario
     CORS(app, resources={r"*": {"origins": "*"}})
