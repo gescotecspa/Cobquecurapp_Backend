@@ -29,3 +29,8 @@ class UserRoleService:
     @staticmethod
     def get_users_for_role(role_id):
         return UserRole.query.filter_by(role_id=role_id).all()
+    
+    @staticmethod
+    def clear_roles_for_user(user_id):
+        db.session.query(UserRole).filter_by(user_id=user_id).delete()
+        db.session.commit()

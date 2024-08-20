@@ -137,3 +137,9 @@ def reset_password():
     db.session.commit()
 
     return jsonify({'message': 'Password has been reset'}), 200
+
+@auth_blueprint.route('/users', methods=['GET'])
+@token_required
+def get_all_users(current_user):
+    users = UserService.get_all_users()
+    return jsonify([user.serialize() for user in users])

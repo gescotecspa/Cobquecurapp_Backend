@@ -9,14 +9,25 @@ class UserRoleResource(Resource):
     def post(self):
         data = request.get_json()
         user_id = data.get('user_id')
-        role_id = data.get('role_id')
-        if user_id is None or role_id is None:
-            return {'message': 'Missing user_id or role_id'}, 400
+        role_ids = data.get('role_ids')
 
-        result = UserRoleService.add_role_to_user(user_id, role_id)
-        if result:
-            return {'message': 'Role assigned to user successfully'}, 201
+        if user_id is None or not role_ids:
+            return {'message': 'Missing user_id or role_ids'}, 400
+
+        UserRoleService.clear_roles_for_user(user_id)
+        
+        failed_roles = []
+        for role_id in role_ids:
+            result = UserRoleService.add_role_to_user(user_id, role_id)
+            if not result:
+                failed_roles.append(role_id)
+
+        if failed_roles:
+            return {
+                'message': 'Some roles failed to assign',
+                'failed_roles': failed_roles
+            }, 400
         else:
-            return {'message': 'Failed to assign role'}, 400
+            return {'message': 'Roles updated successfully'}, 201
 
-api.add_resource(UserRoleResource, '/assign_role_to_user')
+api.add_resource(UserRoleResource, '/assign_roles_to_user')

@@ -14,6 +14,7 @@ from app.models.country import Country
 from app.models.user_role import UserRole
 from app.models.role_funcionality import RoleFunctionality
 from app.models.role import Role
+from app.models.status import Status
 
 # Importa aquí otros modelos a medida que los crees
 
