@@ -137,3 +137,13 @@ class PromotionService:
                 sleep(delay)  # Esperar un poco antes de reintentar
         # Si después de varios intentos no se logra, lanzar la excepción
         raise OperationalError(f"Fallo después de {retries} intentos")
+    @staticmethod
+    def delete_promotion_images(image_ids):
+        # Obtener todas las imágenes por sus IDs
+        images = PromotionImage.query.filter(PromotionImage.image_id.in_(image_ids)).all()
+        if images:
+            for image in images:
+                db.session.delete(image)
+            db.session.commit()
+            return True
+        return False
