@@ -88,11 +88,7 @@ class PromotionService:
 
             # Actualizar las imágenes si se proporcionan nuevas
             if images is not None:
-                # Eliminar las imágenes antiguas asociadas a la promoción
-                old_images = PromotionImage.query.filter(PromotionImage.promotion_id == promotion_id).all()
-                for old_image in old_images:
-                    db.session.delete(old_image)
-
+                
                 # Inicializar ImageManager para manejar las nuevas imágenes
                 image_manager = ImageManager()
 
