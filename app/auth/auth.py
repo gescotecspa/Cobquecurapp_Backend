@@ -67,6 +67,19 @@ def signup():
     except ValueError as e:
         return {'message': str(e)}, 400
 
+@auth_blueprint.route('/signup-partner', methods=['POST'])
+def signup_partner():
+    data = request.get_json()
+    
+    # Extraer datos de la imagen si existen
+    image_data = data.pop('image_data', None)
+    
+    try:
+        user = UserService.create_user_partner(**data)
+        return jsonify(user.serialize()), 201
+    except ValueError as e:
+        return {'message': str(e)}, 400
+
 @auth_blueprint.route('/user', methods=['GET'])
 @token_required
 def get_user(current_user):
