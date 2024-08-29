@@ -28,10 +28,9 @@ class Promotion(db.Model):
     status = db.relationship('Status', backref=db.backref('promotions', lazy=True)) 
     # estado activa en caso de cargarse un estado
     
-    def serialize(self):
-
+    def serialize(self, include_user_info=True):
         partner_details = None
-        if self.partner_id:
+        if include_user_info and self.partner_id:
             partner = Partner.query.get(self.partner_id)
             if partner:
                 partner_details = partner.serialize()

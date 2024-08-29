@@ -37,10 +37,10 @@ def login():
 
     if not data or not data.get('email') or not data.get('password'):
         return make_response('Could not verify - Missing Data', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
-
+    print(data['email'])
     print(data['password'])
     user = UserService.get_user_by_email(data['email'])
-    print(user.password)
+    # print(user.password)
 
     if not user:
         return make_response('Could not verify - User not exist', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
@@ -156,3 +156,53 @@ def reset_password():
 def get_all_users(current_user):
     users = UserService.get_all_users()
     return jsonify([user.serialize() for user in users])
+
+@auth_blueprint.route('/signup/bulk', methods=['POST'])
+@token_required
+def create_bulk_users(current_user):
+    data = request.get_json()
+
+    if not isinstance(data, list):
+        return {'message': 'Invalid data format. Expected a list of users.'}, 400
+
+    created_users = []
+    errors = []
+
+    for user_data in data:
+        image_data = user_data.pop('image_data', None)
+        try:
+            user = UserService.create_user(**user_data, image_data=image_data)
+            created_users.append(user.serialize())
+        except ValueError as e:
+            errors.append({'user_data': user_data, 'error': str(e)})
+
+    if errors:
+        return jsonify({'created_users': created_users, 'errors': errors}), 207
+    return jsonify({'created_users': created_users}), 201
+
+@auth_blueprint.route('/signup-partners/bulk', methods=['POST'])
+def signup_partners():
+    data = request.get_json()
+
+    if not isinstance(data, list):
+        return {'message': 'Invalid data format. Expected a list of partners.'}, 400
+
+    created_users = []
+    errors = []
+
+    for partner_data in data:
+        try:
+            user = UserService.create_user_partner(**partner_data)
+            created_users.append(user.serialize())
+        except ValueError as e:
+            errors.append({'partner_data': partner_data, 'error': str(e)})
+
+    if errors:
+        return jsonify({
+            'created_users': created_users,
+            'errors': errors
+        }), 400
+
+    return jsonify({
+        'created_users': created_users
+    }), 201
