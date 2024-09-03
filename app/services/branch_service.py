@@ -71,3 +71,7 @@ class BranchService:
     @staticmethod
     def get_all_branches():
         return Branch.query.all()
+
+    @staticmethod
+    def get_branches_by_partner_id(partner_id):
+        return Branch.query.filter_by(partner_id=partner_id).all()

@@ -35,9 +35,10 @@ class PromotionListResource(Resource):
         return jsonify(promotion.serialize())
     
 class PromotionImageResource(Resource):
-    def delete(self):
+    def post(self):
         data = request.get_json()
         image_ids = data.get('image_ids', [])
+        print(image_ids)
         if PromotionService.delete_promotion_images(image_ids):
             return {'message': 'Images deleted'}, 200
         return {'message': 'Images not found'}, 404    
@@ -51,5 +52,5 @@ class PromotionByPartnerResource(Resource):
     
 api.add_resource(PromotionResource, '/promotions/<int:promotion_id>')
 api.add_resource(PromotionListResource, '/promotions')
-api.add_resource(PromotionImageResource, '/promotion_images')
+api.add_resource(PromotionImageResource, '/promotion_images/delete')
 api.add_resource(PromotionByPartnerResource, '/partners/<int:partner_id>/promotions')
