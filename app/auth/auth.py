@@ -115,6 +115,7 @@ def reset_password_request():
     email = data.get('email')
 
     user = UserService.get_user_by_email(email)
+    print("usuario",user)
     if not user:
         return jsonify({'message': 'User not found'}), 404
 
@@ -123,8 +124,8 @@ def reset_password_request():
     user.reset_code_expiration = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
     db.session.commit()
 
-    # URL donde se restablecerá la contraseña
-    reset_url = "https://app-turismo-cl-web.vercel.app/reset_password"
+    # URL donde se restablecerá la contraseña app-cobquecura.vercel.app
+    reset_url = "https://cobquecura.vercel.app/reset_password"
 
     subject = "Password Reset Requested"
     recipients = [email]
