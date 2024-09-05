@@ -35,24 +35,29 @@ def token_required(f):
 def login():
     data = request.get_json()
 
+    # Verificar si se envían los datos requeridos
     if not data or not data.get('email') or not data.get('password'):
-        return make_response('Could not verify - Missing Data', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
-    print(data['email'])
-    print(data['password'])
+        return jsonify({'message': 'Missing email or password'}), 400
+
+    # Obtener el usuario por email
     user = UserService.get_user_by_email(data['email'])
-    # print(user.password)
-
+    
+    # Si el usuario no existe
     if not user:
-        return make_response('Could not verify - User not exist', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
+        return jsonify({'message': 'No existe el usuario'}), 404
 
+    # Verificar la contraseña
     if check_password_hash(user.password, data['password']):
+        # Generar el token JWT
         token = jwt.encode(
             {'email': user.email, 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)},
             current_app.config['SECRET_KEY']
         )
-        return jsonify({'token': token, 'user': user.serialize()})
+        # Devolver el token y los datos del usuario
+        return jsonify({'token': token, 'user': user.serialize()}), 200
 
-    return make_response('Could not verify - Invalid Password', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
+    # Si la contraseña es incorrecta
+    return jsonify({'message': 'Password inválido'}), 401
 
 @auth_blueprint.route('/signup', methods=['POST'])
 def signup():
