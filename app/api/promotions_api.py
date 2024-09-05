@@ -48,7 +48,8 @@ class PromotionByPartnerResource(Resource):
         promotions = PromotionService.get_promotions_by_partner(partner_id)
         if promotions:
             return jsonify([promotion.serialize(include_user_info=False) for promotion in promotions])
-        return {'message': 'No promotions found for this partner'}, 404
+        print(promotions)
+        return promotions, 200
     
 api.add_resource(PromotionResource, '/promotions/<int:promotion_id>')
 api.add_resource(PromotionListResource, '/promotions')

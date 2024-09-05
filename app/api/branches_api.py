@@ -44,7 +44,7 @@ class PartnerBranchesResource(Resource):
         branches = BranchService.get_branches_by_partner_id(partner_id)
         if branches:
             return jsonify([branch.serialize() for branch in branches])
-        return {'message': 'No branches found for this partner'}, 404
+        return branches, 200
     
 api.add_resource(BranchResource, '/branches/<int:branch_id>')
 api.add_resource(BranchListResource, '/branches')
