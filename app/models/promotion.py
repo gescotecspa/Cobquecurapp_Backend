@@ -1,6 +1,6 @@
 from app import db
 from .favorite import Favorite
-from .partner import Partner  # Importa la definición de Partner
+from .partner import Partner 
 
 promotion_categories = db.Table('promotion_categories',
     db.Column('promotion_id', db.Integer, db.ForeignKey('promotions.promotion_id'), primary_key=True),
@@ -19,6 +19,7 @@ class Promotion(db.Model):
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.branch_id', onupdate='CASCADE', ondelete='CASCADE'), nullable=False)
     partner_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
     available_quantity = db.Column(db.Integer, nullable=True)
+    consumed_quantity = db.Column(db.Integer, nullable=True, default=0)
     discount_percentage = db.Column(db.Float, nullable=False) 
     status_id = db.Column(db.Integer, db.ForeignKey('statuses.id'), nullable=False, default=1)
 
@@ -45,6 +46,7 @@ class Promotion(db.Model):
             "branch_id": self.branch_id,
             "partner_id": self.partner_id,
             "available_quantity": self.available_quantity,
+            "consumed_quantity": self.consumed_quantity,
             "discount_percentage": self.discount_percentage,
             "status": {
                 "id": self.status.id,

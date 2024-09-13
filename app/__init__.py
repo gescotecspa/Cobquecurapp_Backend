@@ -71,8 +71,11 @@ def create_app():
     
     from app.api.status_api import status_api_blueprint
     app.register_blueprint(status_api_blueprint)
+    
+    from app.api.promotion_consumed_api import promotion_consumed_api_blueprint
+    app.register_blueprint(promotion_consumed_api_blueprint)
     # Importar modelos para asegurarse de que se reconocen al crear la base de datos
-    from app.models import user, category, tourist, partner, promotion, branch, favorite, funcionality, role_funcionality, user_role, status
+    from app.models import user, category, tourist, partner, promotion, branch, favorite, funcionality, role_funcionality, user_role, status, promotion_consumed
 
     # Importar e inicializar los manejadores de errores
     # from app.common import error_handlers
