@@ -10,7 +10,7 @@ class Config:
     
     # Configuración de SMTP
     SMTP_SERVER = os.getenv('SMTP_SERVER')
-    SMTP_PORT = int(os.getenv('SMTP_PORT', 587))  # Convierte a entero, con valor por defecto 587
+    SMTP_PORT = int(os.getenv('SMTP_PORT', 587))
     SMTP_USERNAME = os.getenv('SMTP_USERNAME')
     SMTP_PASSWORD = os.getenv('SMTP_PASSWORD')
     SMTP_DEFAULT_SENDER = os.getenv('SMTP_DEFAULT_SENDER')
