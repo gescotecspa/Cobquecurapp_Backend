@@ -3,6 +3,7 @@ from app import db
 from ..common.image_manager import ImageManager
 
 def create_tourist_point(data):
+    print("data recibida al crear punto",data)
     tourist_point = TouristPoint(
         title=data['title'],
         description=data.get('description'),
@@ -19,6 +20,7 @@ def create_tourist_point(data):
         for image_data in data['images']:
             filename = f"tourist_points/{tourist_point.id}/{image_data['filename']}"
             image_url = image_manager.upload_image(image_data['data'], filename)
+            print(image_url, tourist_point.id)
             image = Image(image_path=image_url, tourist_point_id=tourist_point.id)
             db.session.add(image)
     

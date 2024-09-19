@@ -8,9 +8,9 @@ class TouristService:
         return Tourist.query.get(user_id)
 
     @staticmethod
-    def create_tourist(user_id, origin, birthday, gender, category_ids=[]):
+    def create_tourist(user_id, origin, birthday=None, gender=None, category_ids=[]):
         # Crea un nuevo registro de turista en la base de datos
-        new_tourist = Tourist(user_id=user_id, origin=origin, birthday=birthday, gender=gender)
+        new_tourist = Tourist(user_id=user_id, origin=origin, birthday=birthday if birthday else None, gender=gender)
         db.session.add(new_tourist)
         
         # Asocia las categorías con el turista mediante la tabla intermedia

@@ -59,7 +59,7 @@ class UserService:
             db.session.commit()
             
             # Generar PDF con QR
-            pdf_buffer = generate_pdf(f"{first_name} {last_name}", email)
+            pdf_buffer = generate_pdf(f"{first_name} {last_name}", email, new_user.user_id)
             pdf_filename = f"Credential_{first_name}_{last_name}.pdf"
             
             # Enviar correo electrónico de bienvenida usando una plantilla HTML

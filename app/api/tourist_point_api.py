@@ -33,10 +33,10 @@ class TouristPointListResource(Resource):
     def post(self):
         data = request.get_json()
         # Extraer datos de las imágenes si existen
-        images = data.pop('images', [])
-        for image in images:
-            image['data'] = image.get('data')
-            image['filename'] = image.get('filename')
+        # images = data.pop('images', [])
+        # for image in images:
+        #     image['data'] = image.get('data')
+        #     image['filename'] = image.get('filename')
         
         tourist_point = tourist_point_service.create_tourist_point(data)
         return tourist_point.serialize(), 201  
