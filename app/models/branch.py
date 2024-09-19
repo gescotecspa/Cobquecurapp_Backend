@@ -1,5 +1,4 @@
 from app import db
-from sqlalchemy import Enum
 
 class Branch(db.Model):
     __tablename__ = 'branches'
@@ -11,11 +10,11 @@ class Branch(db.Model):
     address = db.Column(db.Text, nullable=False)
     latitude = db.Column(db.Float, nullable=False)
     longitude = db.Column(db.Float, nullable=False)
-    status = db.Column(Enum('active', 'inactive', 'paused', name='branch_status'), default='active', nullable=False)
-    image_url = db.Column(db.String(255))  # Nuevo campo para la URL de la imagen
-
+    status_id = db.Column(db.Integer, db.ForeignKey('statuses.id'), nullable=False)  
+    image_url = db.Column(db.String(255)) 
     partner = db.relationship('Partner', back_populates='branches')
     promotions = db.relationship('Promotion', backref='branch', lazy=True, cascade='all, delete-orphan')
+    status = db.relationship('Status') 
 
     def serialize(self):
         return {
@@ -26,9 +25,8 @@ class Branch(db.Model):
             "address": self.address,
             "latitude": self.latitude,
             "longitude": self.longitude,
-            "status": self.status,
+            "status": self.status.serialize() if self.status else None,
             "image_url": self.image_url,
-            # "promotions": [promotion.serialize() for promotion in self.promotions]
         }
 
     def __repr__(self):

@@ -8,7 +8,7 @@ class BranchService:
         return Branch.query.get(branch_id)
 
     @staticmethod
-    def create_branch(partner_id, name, description, address, latitude, longitude, status, image_data=None):
+    def create_branch(partner_id, name, description, address, latitude, longitude, status_id, image_data=None):
         # Manejo de la imagen con ImageManager
         image_url = None
         if image_data:
@@ -23,7 +23,7 @@ class BranchService:
             address=address,
             latitude=latitude,
             longitude=longitude,
-            status=status,
+            status_id=status_id,
             image_url=image_url
         )
         db.session.add(new_branch)
@@ -31,7 +31,7 @@ class BranchService:
         return new_branch
 
     @staticmethod
-    def update_branch(branch_id, partner_id=None, name=None, description=None, address=None, latitude=None, longitude=None, status=None, image_data=None):
+    def update_branch(branch_id, partner_id=None, name=None, description=None, address=None, latitude=None, longitude=None, status_id=None, image_data=None):
         branch = BranchService.get_branch_by_id(branch_id)
         if branch:
             # Manejo de la imagen con ImageManager en la actualización
@@ -53,8 +53,8 @@ class BranchService:
                 branch.latitude = latitude
             if longitude is not None:
                 branch.longitude = longitude
-            if status:
-                branch.status = status
+            if status_id is not None:
+                branch.status_id = status_id  # Asegúrate de que status_id es un entero
 
             db.session.commit()
         return branch
@@ -71,3 +71,7 @@ class BranchService:
     @staticmethod
     def get_all_branches():
         return Branch.query.all()
+
+    @staticmethod
+    def get_branches_by_partner_id(partner_id):
+        return Branch.query.filter_by(partner_id=partner_id).all()

@@ -11,6 +11,8 @@ class ImageManager:
         self.bucket_name = Config.GCS_BUCKET_NAME
 
         # Utiliza las credenciales desde Config.GOOGLE_CREDENTIALS
+        print("imprimiendo credenciales",Config.GOOGLE_CREDENTIALS)
+
         self.client = storage.Client.from_service_account_info(Config.GOOGLE_CREDENTIALS)
 
         self.bucket = self.client.get_bucket(self.bucket_name)

@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-# from flask_migrate import Migrate
+from flask_migrate import Migrate
 
 # Instancia de SQLAlchemy
 db = SQLAlchemy()
@@ -17,7 +17,7 @@ def create_app():
     db.init_app(app)
     
     # Inicializar Flask-Migrate con la aplicación Flask y la instancia de SQLAlchemy
-    # migrate = Migrate(app, db)
+    migrate = Migrate(app, db)
     
     # Habilitar CORS si es necesario
     CORS(app, resources={r"*": {"origins": "*"}})
@@ -71,8 +71,11 @@ def create_app():
     
     from app.api.status_api import status_api_blueprint
     app.register_blueprint(status_api_blueprint)
+    
+    from app.api.promotion_consumed_api import promotion_consumed_api_blueprint
+    app.register_blueprint(promotion_consumed_api_blueprint)
     # Importar modelos para asegurarse de que se reconocen al crear la base de datos
-    from app.models import user, category, tourist, partner, promotion, branch, favorite, funcionality, role_funcionality, user_role, status
+    from app.models import user, category, tourist, partner, promotion, branch, favorite, funcionality, role_funcionality, user_role, status, promotion_consumed
 
     # Importar e inicializar los manejadores de errores
     # from app.common import error_handlers

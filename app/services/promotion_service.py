@@ -2,6 +2,7 @@ from app import db
 from app.models.promotion import Promotion, PromotionImage
 from app.models.category import Category
 from app.common.image_manager import ImageManager
+from app.models import Promotion, Branch 
 
 class PromotionService:
     @staticmethod
@@ -9,20 +10,29 @@ class PromotionService:
         return Promotion.query.get(promotion_id)
 
     @staticmethod
-    def create_promotion(branch_id, title, description, start_date, expiration_date, qr_code, discount_percentage, available_quantity=None, partner_id=None, category_ids=[], images=[]):
-        # Crear la nueva promoción
+    def create_promotion(branch_id, title, description, start_date, expiration_date, discount_percentage, available_quantity=None, partner_id=None, category_ids=[], images=[], status_id=None):
+        # Crear la nueva promoción sin código QR
         new_promotion = Promotion(
             branch_id=branch_id,
             title=title,
             description=description,
             start_date=start_date,
             expiration_date=expiration_date,
-            qr_code=qr_code,
             discount_percentage=discount_percentage,
             available_quantity=available_quantity,
-            partner_id=partner_id
+            partner_id=partner_id,
+            status_id=status_id if status_id is not None else 1,
+            qr_code="" 
         )
         db.session.add(new_promotion)
+        db.session.commit()  # Guardar para obtener el ID
+
+        # Generar el código QR con el ID de la promoción y el título
+        qr_code = f"{new_promotion.promotion_id}-{title.replace(' ', '_')}"
+
+        # Actualizar la promoción con el código QR
+        new_promotion.qr_code = qr_code
+        db.session.commit()
 
         # Añadir categorías a la promoción
         for category_id in category_ids:
@@ -51,7 +61,7 @@ class PromotionService:
         return new_promotion
 
     @staticmethod
-    def update_promotion(promotion_id, title=None, description=None, start_date=None, expiration_date=None, qr_code=None, discount_percentage=None, available_quantity=None, partner_id=None, branch_id=None, category_ids=None, images=None):
+    def update_promotion(promotion_id, title=None, description=None, start_date=None, expiration_date=None, qr_code=None, discount_percentage=None, available_quantity=None, partner_id=None, branch_id=None, category_ids=None, images=None, status_id=None):
         # Obtener la promoción existente
         promotion = PromotionService.get_promotion_by_id(promotion_id)
         if promotion:
@@ -74,7 +84,9 @@ class PromotionService:
                 promotion.partner_id = partner_id
             if branch_id is not None:
                 promotion.branch_id = branch_id
-
+            if status_id is not None:
+                promotion.status_id = status_id
+            
             # Actualizar las categorías si se proporcionan nuevas
             if category_ids is not None:
                 promotion.categories.clear()
@@ -85,11 +97,7 @@ class PromotionService:
 
             # Actualizar las imágenes si se proporcionan nuevas
             if images is not None:
-                # Eliminar las imágenes antiguas asociadas a la promoción
-                old_images = PromotionImage.query.filter(PromotionImage.promotion_id == promotion_id).all()
-                for old_image in old_images:
-                    db.session.delete(old_image)
-
+                
                 # Inicializar ImageManager para manejar las nuevas imágenes
                 image_manager = ImageManager()
 
@@ -134,3 +142,17 @@ class PromotionService:
                 sleep(delay)  # Esperar un poco antes de reintentar
         # Si después de varios intentos no se logra, lanzar la excepción
         raise OperationalError(f"Fallo después de {retries} intentos")
+    @staticmethod
+    def delete_promotion_images(image_ids):
+        # Obtener todas las imágenes por sus IDs
+        images = PromotionImage.query.filter(PromotionImage.image_id.in_(image_ids)).all()
+        if images:
+            for image in images:
+                db.session.delete(image)
+            db.session.commit()
+            return True
+        return False
+
+    @staticmethod
+    def get_promotions_by_partner(partner_id):
+        return Promotion.query.join(Branch).filter(Branch.partner_id == partner_id).all()

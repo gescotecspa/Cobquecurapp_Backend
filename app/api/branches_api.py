@@ -39,6 +39,13 @@ class BranchListResource(Resource):
 
         branch = BranchService.create_branch(**data, image_data=image_data)
         return jsonify(branch.serialize())
-
+class PartnerBranchesResource(Resource):
+    def get(self, partner_id):
+        branches = BranchService.get_branches_by_partner_id(partner_id)
+        if branches:
+            return jsonify([branch.serialize() for branch in branches])
+        return branches, 200
+    
 api.add_resource(BranchResource, '/branches/<int:branch_id>')
 api.add_resource(BranchListResource, '/branches')
+api.add_resource(PartnerBranchesResource, '/partners/<int:partner_id>/branches')
