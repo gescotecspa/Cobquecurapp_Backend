@@ -11,7 +11,7 @@ class ImageManager:
         self.bucket_name = Config.GCS_BUCKET_NAME
 
         # Utiliza las credenciales desde Config.GOOGLE_CREDENTIALS
-        print("imprimiendo credenciales",Config.GOOGLE_CREDENTIALS)
+        # print("imprimiendo credenciales",Config.GOOGLE_CREDENTIALS)
 
         self.client = storage.Client.from_service_account_info(Config.GOOGLE_CREDENTIALS)
 
@@ -50,3 +50,13 @@ class ImageManager:
     def resize_image(self, image, max_size=(800, 800)):
         image.thumbnail(max_size, Image.Resampling.LANCZOS)
         return image
+    
+    def delete_image(self, filename):
+        """Elimina una imagen del bucket de Google Cloud Storage"""
+        blob = self.bucket.blob(filename)
+        if blob.exists():
+            blob.delete()
+            return True
+        else:
+            return False
+

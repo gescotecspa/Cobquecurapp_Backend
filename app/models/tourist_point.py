@@ -11,6 +11,9 @@ class TouristPoint(db.Model):
     images = db.relationship('Image', backref='tourist_point', lazy=True)
     ratings = db.relationship('Rating', backref='tourist_point', lazy=True)
 
+    status_id = db.Column(db.Integer, db.ForeignKey('statuses.id'), nullable=False)
+    status = db.relationship('Status', backref='tourist_points')
+
     def serialize(self):
         average_rating = None
         if self.ratings:
@@ -23,7 +26,8 @@ class TouristPoint(db.Model):
             'latitude': self.latitude,
             'longitude': self.longitude,
             'images': [image.serialize() for image in self.images],
-            'average_rating': average_rating
+            'average_rating': average_rating,
+            'status': self.status.serialize() if self.status else None
         }
 
 class Image(db.Model):
