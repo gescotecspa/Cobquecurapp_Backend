@@ -8,6 +8,8 @@ from ..common.pdf_utils import generate_pdf
 from ..common.image_manager import ImageManager
 import uuid
 from app.models.status import Status
+from datetime import datetime
+from app.models.terms_and_conditions import TermsAndConditions
 
 class UserService:
     @staticmethod
@@ -23,7 +25,7 @@ class UserService:
         return User.query.all()
 
     @staticmethod
-    def create_user(password, first_name, last_name, country, email, status_id, city=None, birth_date=None, phone_number=None, gender=None, subscribed_to_newsletter=None, image_data=None):
+    def create_user(password, first_name, last_name, country, email, status_id, city=None, birth_date=None, phone_number=None, gender=None, subscribed_to_newsletter=None, image_data=None, accept_terms=False):
         existing_user = UserService.get_user_by_email(email)
         if existing_user:
             raise ValueError("A user with that email already exists.")
@@ -40,6 +42,11 @@ class UserService:
         if not status:
             raise ValueError("Invalid status ID provided.")
         
+        # Obtener el último término y condiciones creados
+        latest_terms = TermsAndConditions.query.order_by(TermsAndConditions.id.desc()).first()
+        if not latest_terms:
+            raise ValueError("No terms and conditions available.")
+
         new_user = User(
             password=hashed_password, 
             first_name=first_name, 
@@ -52,7 +59,9 @@ class UserService:
             phone_number=phone_number, 
             gender=gender, 
             subscribed_to_newsletter=subscribed_to_newsletter, 
-            image_url=image_url
+            image_url=image_url,
+            terms_id=latest_terms.id,
+            terms_accepted_at=datetime.utcnow()
         )
         db.session.add(new_user)
         try:
