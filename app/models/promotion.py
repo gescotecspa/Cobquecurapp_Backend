@@ -56,7 +56,7 @@ class Promotion(db.Model):
             "images": [image.serialize() for image in self.images],
             "categories": [{"category_id": category.category_id, "name": category.name} for category in self.categories],
             "favorites": [{"user_id": fav.user_id, "created_at": fav.created_at.isoformat()} for fav in self.favorites],
-            "partner_details": partner_details  # Agregando detalles del partner
+            "partner_details": partner_details 
         }
 
     def __repr__(self):

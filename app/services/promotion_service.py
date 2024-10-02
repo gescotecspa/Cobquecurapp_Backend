@@ -2,7 +2,8 @@ from app import db
 from app.models.promotion import Promotion, PromotionImage
 from app.models.category import Category
 from app.common.image_manager import ImageManager
-from app.models import Promotion, Branch 
+from app.models import Promotion, Branch
+from config import Config
 
 class PromotionService:
     @staticmethod
@@ -147,8 +148,20 @@ class PromotionService:
         # Obtener todas las imágenes por sus IDs
         images = PromotionImage.query.filter(PromotionImage.image_id.in_(image_ids)).all()
         if images:
+            image_manager = ImageManager()
             for image in images:
+                # Intentar borrar la imagen de Google Cloud Storage
+                try:
+                    filename = image.image_path
+                    relative_path = filename.split(f"{Config.GCS_BUCKET_NAME}/")[1]
+                    image_manager.delete_image(relative_path)
+                except Exception as e:
+                    print(f"Error al eliminar la imagen {filename} de la nube: {e}")
+                
+                # Eliminar la imagen de la base de datos
                 db.session.delete(image)
+            
+            # Guardar los cambios en la base de datos
             db.session.commit()
             return True
         return False

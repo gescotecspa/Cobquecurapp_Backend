@@ -140,7 +140,7 @@ def delete_images(image_ids):
             # Extrae la ruta completa desde la URL de la imagen
             file_path = image.image_path # Ajusta según el campo que uses en el modelo
             relative_path = file_path.split(f"{Config.GCS_BUCKET_NAME}/")[1]  # Obtener la ruta relativa (sin el primer "/")
-            print(relative_path)
+            # print(relative_path)
             # file_path ahora contiene 'tourist_points/28/LOGOASOCIADOS.png', por ejemplo
             success = image_manager.delete_image(relative_path)  # Pasa la ruta relativa correcta
             if not success:
