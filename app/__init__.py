@@ -10,6 +10,7 @@ def create_app():
     # Crear una instancia de Flask
     app = Flask(__name__)
     print("creo la app")
+    
     # Configuración de la aplicación
     app.config.from_object('config.Config')
     

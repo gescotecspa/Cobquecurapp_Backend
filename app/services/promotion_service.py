@@ -47,11 +47,13 @@ class PromotionService:
         # Procesar y subir cada imagen
         for image_data in images:
             # Generar un nombre de archivo único para cada imagen
+            
             filename = f"promotions/{new_promotion.promotion_id}/{image_data['filename']}"
             
             # Subir la imagen y obtener la URL pública
-            image_url = image_manager.upload_image(image_data['data'], filename)
+            category='promotions'
             
+            image_url = image_manager.upload_image(image_data['data'], filename, category)
             # Crear una instancia de PromotionImage y asociarla a la promoción
             new_image = PromotionImage(promotion=new_promotion, image_path=image_url)
             db.session.add(new_image)
@@ -105,7 +107,8 @@ class PromotionService:
                 # Procesar y subir cada nueva imagen
                 for image_data in images:
                     filename = f"promotions/{promotion.promotion_id}/{image_data['filename']}"
-                    image_url = image_manager.upload_image(image_data['data'], filename)
+                    category='promotions'
+                    image_url = image_manager.upload_image(image_data['data'], filename, category)
                     new_image = PromotionImage(promotion_id=promotion_id, image_path=image_url)
                     db.session.add(new_image)
             
@@ -145,20 +148,23 @@ class PromotionService:
         raise OperationalError(f"Fallo después de {retries} intentos")
     @staticmethod
     def delete_promotion_images(image_ids):
-        # Obtener todas las imágenes por sus IDs
         images = PromotionImage.query.filter(PromotionImage.image_id.in_(image_ids)).all()
         if images:
             image_manager = ImageManager()
             for image in images:
-                # Intentar borrar la imagen de Google Cloud Storage
+                # Intentar borrar la imagen del sistema de almacenamiento
                 try:
                     filename = image.image_path
                     relative_path = filename.split(f"{Config.GCS_BUCKET_NAME}/")[1]
-                    image_manager.delete_image(relative_path)
+
+                    # Determinar la categoría a partir de la ruta del archivo
+                    category = relative_path.split('/')[0] 
+                    file_path = relative_path.split(f"{category}/")[1] 
+
+                    # Llamar a la función delete_image con el nombre de archivo y categoría
+                    image_manager.delete_image(file_path, category)
                 except Exception as e:
-                    print(f"Error al eliminar la imagen {filename} de la nube: {e}")
-                
-                # Eliminar la imagen de la base de datos
+                    print(f"Error al eliminar la imagen {filename} del sistema: {e}")
                 db.session.delete(image)
             
             # Guardar los cambios en la base de datos

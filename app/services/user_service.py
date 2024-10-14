@@ -37,7 +37,8 @@ class UserService:
         if image_data:
             image_manager = ImageManager()
             filename = f"users/{email}/profile_image.png"
-            image_url = image_manager.upload_image(image_data, filename)
+            category = 'users'
+            image_url = image_manager.upload_image(image_data, filename, category)
         status = Status.query.get(status_id)
         if not status:
             raise ValueError("Invalid status ID provided.")
@@ -93,7 +94,8 @@ class UserService:
                     image_manager = ImageManager()
                     unique_id = uuid.uuid4().hex
                     filename = f"users/{user.email}/profile_image_{unique_id}.png"
-                    image_url = image_manager.upload_image(image_data, filename)
+                    category = 'users'
+                    image_url = image_manager.upload_image(image_data, filename, category)
                     user.image_url = image_url
             
             # Manejo de la actualización de la contraseña
