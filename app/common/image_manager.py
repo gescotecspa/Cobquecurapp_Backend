@@ -60,7 +60,7 @@ class ImageManager:
                         
         # Definir la ruta completa del archivo
         file_path = os.path.join(user_folder, clean_filename)
-
+        print("file path, ",  file_path)
         # Guardar la imagen en el sistema de archivos en formato PNG
         try:
             resized_image.save(file_path, format='PNG')
@@ -68,7 +68,9 @@ class ImageManager:
             raise ValueError(f"Failed to save image: {str(e)}")
 
         # Generar la URL para acceder a la imagen
-        image_url = url_for('static', filename=os.path.join(category, os.path.basename(user_folder), clean_filename).replace('\\', '/'), _external=True)
+        print("user_folder que se pasa para crear", user_folder)
+        image_url = f"/upload_image/{category}/{os.path.basename(user_folder).replace('\\', '/')}/{clean_filename}"
+
 
         print("url de la nueva imagen", image_url)
 

@@ -1,7 +1,8 @@
-from flask import Flask
+from flask import Flask, send_from_directory, jsonify, Response
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_migrate import Migrate
+import os
 
 # Instancia de SQLAlchemy
 db = SQLAlchemy()
@@ -14,9 +15,25 @@ def create_app():
     # Configuración de la aplicación
     app.config.from_object('config.Config')
     
+    # @app.route('/upload_image/<path:filename>', methods=['GET'])
+    # def serve_static(filename):
+    #     file_path = os.path.join('upload_image', filename)
+    #     print(f"Ruta completa: {file_path}")
+    #     print("filename____",filename)
+    #     print(os.path.exists(file_path))
+    #     try:
+    #         with open(file_path, 'rb') as f:
+    #             data = f.read()
+    #         return Response(data, mimetype='image/png')
+    #     except FileNotFoundError:
+    #         return jsonify({"error": "Archivo no encontrado"}), 404
+    #     except Exception as e:
+    #         return jsonify({"error": f"Error inesperado: {str(e)}"}), 500
+    
     # Inicializar SQLAlchemy con la aplicación Flask
     db.init_app(app)
     
+
     # Inicializar Flask-Migrate con la aplicación Flask y la instancia de SQLAlchemy
     migrate = Migrate(app, db)
     
@@ -24,6 +41,8 @@ def create_app():
     CORS(app, resources={r"*": {"origins": "*"}})
 
     # Importar e inicializar las rutas de la API
+    from app.api.image_api import image_api_blueprint
+    app.register_blueprint(image_api_blueprint)
 
     from app.auth import auth_blueprint
     app.register_blueprint(auth_blueprint)
