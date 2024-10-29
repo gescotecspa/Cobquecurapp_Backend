@@ -35,24 +35,29 @@ def token_required(f):
 def login():
     data = request.get_json()
 
+    # Verificar si se envían los datos requeridos
     if not data or not data.get('email') or not data.get('password'):
-        return make_response('Could not verify - Missing Data', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
+        return jsonify({'message': 'Missing email or password'}), 400
 
-    print(data['password'])
+    # Obtener el usuario por email
     user = UserService.get_user_by_email(data['email'])
-    print(user.password)
-
+    
+    # Si el usuario no existe
     if not user:
-        return make_response('Could not verify - User not exist', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
+        return jsonify({'message': 'No existe el usuario'}), 404
 
+    # Verificar la contraseña
     if check_password_hash(user.password, data['password']):
+        # Generar el token JWT
         token = jwt.encode(
             {'email': user.email, 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)},
             current_app.config['SECRET_KEY']
         )
-        return jsonify({'token': token, 'user': user.serialize()})
+        # Devolver el token y los datos del usuario
+        return jsonify({'token': token, 'user': user.serialize()}), 200
 
-    return make_response('Could not verify - Invalid Password', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
+    # Si la contraseña es incorrecta
+    return jsonify({'message': 'Password inválido'}), 401
 
 @auth_blueprint.route('/signup', methods=['POST'])
 def signup():
@@ -63,6 +68,19 @@ def signup():
     
     try:
         user = UserService.create_user(**data, image_data=image_data)
+        return jsonify(user.serialize()), 201
+    except ValueError as e:
+        return {'message': str(e)}, 400
+
+@auth_blueprint.route('/signup-partner', methods=['POST'])
+def signup_partner():
+    data = request.get_json()
+    
+    # Extraer datos de la imagen si existen
+    image_data = data.pop('image_data', None)
+    
+    try:
+        user = UserService.create_user_partner(**data)
         return jsonify(user.serialize()), 201
     except ValueError as e:
         return {'message': str(e)}, 400
@@ -97,6 +115,7 @@ def reset_password_request():
     email = data.get('email')
 
     user = UserService.get_user_by_email(email)
+    # print("usuario",user)
     if not user:
         return jsonify({'message': 'User not found'}), 404
 
@@ -105,8 +124,8 @@ def reset_password_request():
     user.reset_code_expiration = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
     db.session.commit()
 
-    # URL donde se restablecerá la contraseña
-    reset_url = "https://app-turismo-cl-web.vercel.app/reset_password"
+    # URL donde se restablecerá la contraseña app-cobquecura.vercel.app
+    reset_url = "https://cobquecura.vercel.app/reset_password"
 
     subject = "Password Reset Requested"
     recipients = [email]
@@ -143,3 +162,53 @@ def reset_password():
 def get_all_users(current_user):
     users = UserService.get_all_users()
     return jsonify([user.serialize() for user in users])
+
+@auth_blueprint.route('/signup/bulk', methods=['POST'])
+@token_required
+def create_bulk_users(current_user):
+    data = request.get_json()
+
+    if not isinstance(data, list):
+        return {'message': 'Invalid data format. Expected a list of users.'}, 400
+
+    created_users = []
+    errors = []
+
+    for user_data in data:
+        image_data = user_data.pop('image_data', None)
+        try:
+            user = UserService.create_user(**user_data, image_data=image_data)
+            created_users.append(user.serialize())
+        except ValueError as e:
+            errors.append({'user_data': user_data, 'error': str(e)})
+
+    if errors:
+        return jsonify({'created_users': created_users, 'errors': errors}), 207
+    return jsonify({'created_users': created_users}), 201
+
+@auth_blueprint.route('/signup-partners/bulk', methods=['POST'])
+def signup_partners():
+    data = request.get_json()
+
+    if not isinstance(data, list):
+        return {'message': 'Invalid data format. Expected a list of partners.'}, 400
+
+    created_users = []
+    errors = []
+
+    for partner_data in data:
+        try:
+            user = UserService.create_user_partner(**partner_data)
+            created_users.append(user.serialize())
+        except ValueError as e:
+            errors.append({'partner_data': partner_data, 'error': str(e)})
+
+    if errors:
+        return jsonify({
+            'created_users': created_users,
+            'errors': errors
+        }), 400
+
+    return jsonify({
+        'created_users': created_users
+    }), 201

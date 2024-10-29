@@ -28,7 +28,9 @@ class PartnerService:
             if business_type is not None:
                 partner.business_type = business_type
             if category_ids is not None:
-                partner.categories.clear()
+            # Limpiar las categorías existentes
+                partner.categories = []
+                # Agregar nuevas categorías
                 for category_id in category_ids:
                     category = Category.query.get(category_id)
                     if category:

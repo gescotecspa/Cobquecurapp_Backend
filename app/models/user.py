@@ -1,5 +1,7 @@
 from app import db
 from app.models.status import Status 
+from datetime import datetime
+import pytz
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -22,7 +24,18 @@ class User(db.Model):
     reset_code_expiration = db.Column(db.DateTime, nullable=True)
     roles = db.relationship('Role', secondary='user_roles', backref=db.backref('users', lazy='dynamic'))
     
+    terms_id = db.Column(db.Integer, db.ForeignKey('terms_and_conditions.id'), nullable=True)
+    terms = db.relationship('TermsAndConditions', backref='users')
+    terms_accepted_at = db.Column(db.DateTime, nullable=True, default=datetime.utcnow)
+    
     def serialize(self):
+        local_tz = pytz.timezone('America/Santiago')
+    
+        if self.terms_accepted_at is not None:
+            terms_accepted_at = self.terms_accepted_at.replace(tzinfo=pytz.utc).astimezone(local_tz)
+        else:
+            terms_accepted_at = None 
+        
         return {
             'user_id': self.user_id,
             'first_name': self.first_name,
@@ -36,5 +49,7 @@ class User(db.Model):
             'status': self.status.serialize() if self.status else None,
             'subscribed_to_newsletter': self.subscribed_to_newsletter,
             'image_url': self.image_url,
-            "roles": [role.serialize() for role in self.roles]
+            "roles": [role.serialize() for role in self.roles],
+            'terms': self.terms.serialize() if self.terms else None,
+            'terms_accepted_at': terms_accepted_at.strftime('%Y-%m-%dT%H:%M:%S %z') if terms_accepted_at else None,
         }

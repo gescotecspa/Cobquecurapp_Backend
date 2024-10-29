@@ -10,9 +10,9 @@ class Partner(db.Model):
     __tablename__ = 'partner_details'
 
     user_id = db.Column(db.Integer, primary_key=True)
-    address = db.Column(db.Text, nullable=False)
-    contact_info = db.Column(db.String(255), nullable=False)
-    business_type = db.Column(db.String(255))
+    address = db.Column(db.Text, nullable=True)  # No obligatorio
+    contact_info = db.Column(db.String(255), nullable=True)  # No obligatorio
+    business_type = db.Column(db.String(255), nullable=True) 
     categories = db.relationship('Category', secondary=partner_categories, lazy='dynamic')
     branches = db.relationship('Branch', back_populates='partner', cascade='all, delete-orphan')
 

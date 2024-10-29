@@ -15,14 +15,21 @@ class TouristPointResource(Resource):
     def put(self, id):
         data = request.get_json()
         # Extraer datos de las imágenes si existen
-        images = data.pop('images', [])
-        for image in images:
-            image['data'] = image.get('data')
-            image['filename'] = image.get('filename')
+        # images = data.pop('images', [])
+        # for image in images:
+        #     image['data'] = image.get('data')
+        #     image['filename'] = image.get('filename')
 
         updated_tourist_point = tourist_point_service.update_tourist_point(id, data)
         if updated_tourist_point:
             return updated_tourist_point  # El objeto ya está serializado
+        return {'message': 'Tourist point not found'}, 404
+    
+    def delete(self, id):
+        """Realiza un borrado lógico del punto turístico"""
+        deleted_tourist_point = tourist_point_service.delete_tourist_point(id)
+        if deleted_tourist_point:
+            return {'message': 'Tourist point deleted (logical delete)'}, 200
         return {'message': 'Tourist point not found'}, 404
 
 class TouristPointListResource(Resource):
@@ -33,10 +40,10 @@ class TouristPointListResource(Resource):
     def post(self):
         data = request.get_json()
         # Extraer datos de las imágenes si existen
-        images = data.pop('images', [])
-        for image in images:
-            image['data'] = image.get('data')
-            image['filename'] = image.get('filename')
+        # images = data.pop('images', [])
+        # for image in images:
+        #     image['data'] = image.get('data')
+        #     image['filename'] = image.get('filename')
         
         tourist_point = tourist_point_service.create_tourist_point(data)
         return tourist_point.serialize(), 201  
@@ -83,10 +90,25 @@ class AverageRatingResource(Resource):
         avg_rating = tourist_point_service.get_average_rating(id)
         return avg_rating, 200
 
+class ImageDeleteResource(Resource):
+    def post(self, id):
+        data = request.get_json()
+        image_ids = data.get('image_ids', [])
+        
+        if not image_ids:
+            return {'message': 'No image IDs provided'}, 400
 
+        success = tourist_point_service.delete_images(image_ids)
+        
+        if success:
+            return {'message': 'Images deleted successfully'}, 200
+        else:
+            return {'message': 'Failed to delete images'}, 500
+        
 api.add_resource(TouristPointResource, '/tourist_points/<int:id>')
 api.add_resource(TouristPointListResource, '/tourist_points')
 api.add_resource(ImageResource, '/tourist_points/<int:id>/images')
 api.add_resource(RatingResource, '/tourist_points/<int:id>/ratings')
 api.add_resource(RatingDetailResource, '/ratings/<int:rating_id>')
 api.add_resource(AverageRatingResource, '/tourist_points/<int:id>/average_rating')
+api.add_resource(ImageDeleteResource, '/tourist_points/<int:id>/images/delete')

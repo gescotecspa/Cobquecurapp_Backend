@@ -7,7 +7,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 
-def generate_pdf(name, email):
+def generate_pdf(name, email, user_id):
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=letter)
     width, height = letter
@@ -50,8 +50,9 @@ def generate_pdf(name, email):
     c.drawString(text_x, text_y - 0.5 * inch, f"Email: {email}")
 
     # Añadir código QR con margen derecho
+    qr_value = f"{user_id}-{email}"
     qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=4)
-    qr.add_data(email)
+    qr.add_data(qr_value)
     qr.make(fit=True)
     img = qr.make_image(fill='black', back_color='white')
     img = img.convert("RGB")

@@ -15,7 +15,8 @@ from app.models.user_role import UserRole
 from app.models.role_funcionality import RoleFunctionality
 from app.models.role import Role
 from app.models.status import Status
-
+from app.models.promotion_consumed import PromotionConsumed
+from app.models.terms_and_conditions import TermsAndConditions 
 # Importa aquí otros modelos a medida que los crees
 
 # Si necesitas inicializar algo específicamente para los modelos, puedes hacerlo aquí.
