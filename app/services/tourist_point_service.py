@@ -25,7 +25,8 @@ def create_tourist_point(data):
         image_manager = ImageManager()
         for image_data in data['images']:
             filename = f"tourist_points/{tourist_point.id}/{image_data['filename']}"
-            image_url = image_manager.upload_image(image_data['data'], filename)
+            category = 'tourist_points'
+            image_url = image_manager.upload_image(image_data['data'], filename, category)
             print(image_url, tourist_point.id)
             image = Image(image_path=image_url, tourist_point_id=tourist_point.id)
             db.session.add(image)
@@ -50,7 +51,8 @@ def update_tourist_point(tourist_point_id, data):
         image_manager = ImageManager()
         for image_data in data['images']:
             filename = f"tourist_points/{tourist_point.id}/{image_data['filename']}"
-            image_url = image_manager.upload_image(image_data['data'], filename)
+            category = 'tourist_points'
+            image_url = image_manager.upload_image(image_data['data'], filename, category)
             image = Image(image_path=image_url, tourist_point_id=tourist_point_id)
             db.session.add(image)
     
@@ -68,7 +70,8 @@ def get_tourist_point_by_id(tourist_point_id):
 def add_image(tourist_point_id, image_data):
     image_manager = ImageManager()
     filename = f"tourist_points/{tourist_point_id}/{image_data['filename']}"
-    image_url = image_manager.upload_image(image_data['data'], filename)
+    category = 'tourist_points'
+    image_url = image_manager.upload_image(image_data['data'], filename, category)
     
     image = Image(image_path=image_url, tourist_point_id=tourist_point_id)
     db.session.add(image)
@@ -124,7 +127,6 @@ def get_average_rating(tourist_point_id):
 
 def get_ratings_by_tourist_point(tourist_point_id):
     return Rating.query.filter_by(tourist_point_id=tourist_point_id).all()
-
 def delete_images(image_ids):
     image_manager = ImageManager()
     
@@ -135,14 +137,18 @@ def delete_images(image_ids):
         if not images_to_delete:
             return None
 
-        # Elimina las imágenes del bucket y de la base de datos
+        # Elimina las imágenes del sistema de archivos y de la base de datos
         for image in images_to_delete:
             # Extrae la ruta completa desde la URL de la imagen
-            file_path = image.image_path # Ajusta según el campo que uses en el modelo
+            file_path = image.image_path  # Ajusta según el campo que uses en el modelo
             relative_path = file_path.split(f"{Config.GCS_BUCKET_NAME}/")[1]  # Obtener la ruta relativa (sin el primer "/")
-            print(relative_path)
-            # file_path ahora contiene 'tourist_points/28/LOGOASOCIADOS.png', por ejemplo
-            success = image_manager.delete_image(relative_path)  # Pasa la ruta relativa correcta
+
+            # Determina la categoría a partir de la ruta del archivo
+            category = relative_path.split('/')[0]  # Ejemplo: 'tourist_points', 'usuarios', etc.
+            filename = relative_path.split(f"{category}/")[1]  # Resto del archivo
+
+            # Elimina la imagen del sistema de archivos
+            success = image_manager.delete_image(filename, category)  # Pasa la categoría correcta
             if not success:
                 print(f"Failed to delete image: {file_path}")
 
@@ -155,6 +161,37 @@ def delete_images(image_ids):
         db.session.rollback()
         print(f"Error deleting images: {e}")
         return False
+    #Google storage
+# def delete_images(image_ids):
+#     image_manager = ImageManager()
+    
+#     try:
+#         # Busca todas las imágenes por su ID
+#         images_to_delete = Image.query.filter(Image.id.in_(image_ids)).all()
+
+#         if not images_to_delete:
+#             return None
+
+#         # Elimina las imágenes del bucket y de la base de datos
+#         for image in images_to_delete:
+#             # Extrae la ruta completa desde la URL de la imagen
+#             file_path = image.image_path # Ajusta según el campo que uses en el modelo
+#             relative_path = file_path.split(f"{Config.GCS_BUCKET_NAME}/")[1]  # Obtener la ruta relativa (sin el primer "/")
+#             # print(relative_path)
+#             # file_path ahora contiene 'tourist_points/28/LOGOASOCIADOS.png', por ejemplo
+#             success = image_manager.delete_image(relative_path)  # Pasa la ruta relativa correcta
+#             if not success:
+#                 print(f"Failed to delete image: {file_path}")
+
+#             # Elimina la entrada en la base de datos
+#             db.session.delete(image)
+
+#         db.session.commit()
+#         return True
+#     except Exception as e:
+#         db.session.rollback()
+#         print(f"Error deleting images: {e}")
+#         return False
 
 def delete_tourist_point(tourist_point_id):
     tourist_point = TouristPoint.query.get(tourist_point_id)

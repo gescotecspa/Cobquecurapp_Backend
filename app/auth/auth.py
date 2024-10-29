@@ -115,7 +115,7 @@ def reset_password_request():
     email = data.get('email')
 
     user = UserService.get_user_by_email(email)
-    print("usuario",user)
+    # print("usuario",user)
     if not user:
         return jsonify({'message': 'User not found'}), 404
 

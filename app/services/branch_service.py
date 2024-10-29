@@ -14,7 +14,8 @@ class BranchService:
         if image_data:
             image_manager = ImageManager()
             filename = f"branches/{name.replace(' ', '_')}_image.png"
-            image_url = image_manager.upload_image(image_data, filename)
+            category = 'branches'
+            image_url = image_manager.upload_image(image_data, filename, category)
 
         new_branch = Branch(
             partner_id=partner_id,
@@ -38,7 +39,8 @@ class BranchService:
             if image_data:
                 image_manager = ImageManager()
                 filename = f"branches/{branch.name.replace(' ', '_')}_image.png"
-                image_url = image_manager.upload_image(image_data, filename)
+                category = 'branches'
+                image_url = image_manager.upload_image(image_data, filename, category)
                 branch.image_url = image_url
 
             if partner_id is not None:
