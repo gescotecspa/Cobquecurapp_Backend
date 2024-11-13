@@ -17,8 +17,12 @@ class UserService:
         return User.query.get(user_id)
 
     @staticmethod
-    def get_user_by_email(email):
-        return User.query.filter_by(email=email).first()
+    def get_user_by_email(email: str):
+    # Busca el usuario por email y que el status no sea "deleted"
+        return User.query.join(User.status).filter(
+            User.email == email,
+            User.status.has(name='deleted') == False
+        ).first()
 
     @staticmethod
     def get_all_users():
@@ -27,7 +31,8 @@ class UserService:
     @staticmethod
     def create_user(password, first_name, last_name, country, email, status_id, city=None, birth_date=None, phone_number=None, gender=None, subscribed_to_newsletter=None, image_data=None, accept_terms=False):
         existing_user = UserService.get_user_by_email(email)
-        if existing_user:
+        print(existing_user)
+        if existing_user and existing_user.status.name != 'deleted':
             raise ValueError("A user with that email already exists.")
 
         hashed_password = generate_password_hash(password)
@@ -133,7 +138,7 @@ class UserService:
     @staticmethod
     def create_user_partner(password, first_name, last_name, country, email, status_id, city=None, birth_date=None, phone_number=None, gender=None, subscribed_to_newsletter=None):
         existing_user = UserService.get_user_by_email(email)
-        if existing_user:
+        if existing_user and existing_user.status.name != 'deleted':
             raise ValueError("A user with that email already exists.")
 
         hashed_password = generate_password_hash(password)

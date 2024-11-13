@@ -13,7 +13,7 @@ class User(db.Model):
     country = db.Column(db.String(120), nullable=False)
     city = db.Column(db.String(120))
     birth_date = db.Column(db.String(10))
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    email = db.Column(db.String(120), nullable=False)
     phone_number = db.Column(db.String(20))
     gender = db.Column(db.String(10))
     status_id = db.Column(db.Integer, db.ForeignKey('statuses.id'), nullable=False)
