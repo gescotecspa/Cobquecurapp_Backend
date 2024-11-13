@@ -125,7 +125,7 @@ def reset_password_request():
     db.session.commit()
 
     # URL donde se restablecerá la contraseña app-cobquecura.vercel.app
-    reset_url = "https://cobquecura.vercel.app/reset_password"
+    reset_url = "https://seal-app-dx4lr.ondigitalocean.app/reset_password"
 
     subject = "Password Reset Requested"
     recipients = [email]
