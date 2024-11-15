@@ -87,7 +87,7 @@ class ImageManager:
 
         return image_url
 
-    def resize_image(self, image, max_size=(600, 600)):
+    def resize_image(self, image, max_size=(500, 500)):
         """Redimensiona la imagen manteniendo la relación de aspecto."""
         image.thumbnail(max_size, Image.Resampling.LANCZOS)
         return image
