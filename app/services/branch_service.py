@@ -13,7 +13,7 @@ class BranchService:
         image_url = None
         if image_data:
             image_manager = ImageManager()
-            filename = f"branches/{name.replace(' ', '_')}_image.png"
+            filename = f"branches/{partner_id}/{name.replace(' ', '_')}_image.png"  # Cambiar aquí
             category = 'branches'
             image_url = image_manager.upload_image(image_data, filename, category)
 
@@ -36,9 +36,10 @@ class BranchService:
         branch = BranchService.get_branch_by_id(branch_id)
         if branch:
             # Manejo de la imagen con ImageManager en la actualización
+            # print("imprimo partner id------------------------",partner_id)
             if image_data:
                 image_manager = ImageManager()
-                filename = f"branches/{branch.name.replace(' ', '_')}_image.png"
+                filename = f"branches/{partner_id}/{name.replace(' ', '_')}_image.png"  # Cambiar aquí
                 category = 'branches'
                 image_url = image_manager.upload_image(image_data, filename, category)
                 branch.image_url = image_url

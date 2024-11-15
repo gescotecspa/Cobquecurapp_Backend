@@ -46,12 +46,23 @@ class ImageManager:
         # Extraer solo el nombre de archivo
         clean_filename = os.path.basename(filename)
 
-        # Crear la carpeta de usuario si no existe
+        # Crear la carpeta de usuario o sucursal si no existe
         user_folder = os.path.join(category_folder, os.path.basename(os.path.dirname(filename)))
+
+        # Si la categoría es 'users' o 'branches', utilizamos el identificador único
+        if category == 'users':
+            # Utiliza el email del usuario para crear la carpeta
+            user_folder = os.path.join(category_folder, os.path.basename(os.path.dirname(filename)))
+        elif category == 'branches':
+            # Utiliza el partner_id o nombre de sucursal como subcarpeta
+            partner_id = os.path.basename(os.path.dirname(filename))  # Extrae el identificador de la sucursal
+            user_folder = os.path.join(category_folder, partner_id)
+
+        # Crear la carpeta si no existe
         if not os.path.exists(user_folder):
             os.makedirs(user_folder)
         else:
-            # Si la categoría es 'users' o 'branches', vaciar la carpeta
+            # Vaciar la carpeta si la categoría es 'users' o 'branches'
             if category in ['users', 'branches']:
                 for file in os.listdir(user_folder):
                     file_path = os.path.join(user_folder, file)
