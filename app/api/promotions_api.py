@@ -50,8 +50,26 @@ class PromotionByPartnerResource(Resource):
             return jsonify([promotion.serialize(include_user_info=False) for promotion in promotions])
         print(promotions)
         return promotions, 200
+
+class PromotionBulkDeleteResource(Resource):
+    def put(self):
+        data = request.get_json()
+        promotion_ids = data.get('promotion_ids', [])
+        status_id = data.get('status_id')  # Suponiendo que 'status_id' es el valor que indica que la promoción fue eliminada
+
+        # Verificar si se recibió el arreglo de IDs de promociones y el status_id
+        if not promotion_ids or not status_id:
+            return {'message': 'Missing promotion_ids or status_id'}, 400
+
+        # Llamamos al servicio para actualizar las promociones
+        updated_promotions = PromotionService.bulk_update_promotions_status(promotion_ids, status_id)
+        
+        if updated_promotions:
+            return {'message': 'Promotions updated successfully'}, 200
+        return {'message': 'Failed to update promotions'}, 500
     
 api.add_resource(PromotionResource, '/promotions/<int:promotion_id>')
 api.add_resource(PromotionListResource, '/promotions')
 api.add_resource(PromotionImageResource, '/promotion_images/delete')
 api.add_resource(PromotionByPartnerResource, '/partners/<int:partner_id>/promotions')
+api.add_resource(PromotionBulkDeleteResource, '/promotions/bulk_delete')

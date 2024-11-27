@@ -175,7 +175,24 @@ class PromotionService:
     def get_promotions_by_partner(partner_id):
         return Promotion.query.join(Branch).filter(Branch.partner_id == partner_id).all()
     
-    
+    @staticmethod
+    def bulk_update_promotions_status(promotion_ids, status_id):
+        try:
+            promotions = Promotion.query.filter(Promotion.promotion_id.in_(promotion_ids)).all()
+            
+            if not promotions:
+                return None
+
+            for promotion in promotions:
+                promotion.status_id = status_id
+
+            db.session.commit()
+            return promotions
+
+        except Exception as e:
+            print(f"Error al actualizar promociones: {e}")
+            db.session.rollback()
+            return None
     #eliminar imagenes google storage
     # @staticmethod
     # def delete_promotion_images(image_ids):
