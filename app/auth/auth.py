@@ -37,7 +37,7 @@ def login():
 
     # Verificar si se envían los datos requeridos
     if not data or not data.get('email') or not data.get('password'):
-        return jsonify({'message': 'Missing email or password'}), 400
+        return jsonify({'message': 'Debe ingresar email y contraseña'}), 400
 
     # Obtener el usuario por email
     user = UserService.get_user_by_email(data['email'])
@@ -57,7 +57,7 @@ def login():
         return jsonify({'token': token, 'user': user.serialize()}), 200
 
     # Si la contraseña es incorrecta
-    return jsonify({'message': 'Password inválido'}), 401
+    return jsonify({'message': 'Contraseña inválida'}), 401
 
 @auth_blueprint.route('/signup', methods=['POST'])
 def signup():
