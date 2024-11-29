@@ -10,6 +10,7 @@ import uuid
 from app.models.status import Status
 from datetime import datetime
 from app.models.terms_and_conditions import TermsAndConditions
+from sqlalchemy import func
 
 class UserService:
     @staticmethod
@@ -20,7 +21,7 @@ class UserService:
     def get_user_by_email(email: str):
     # Busca el usuario por email y que el status no sea "deleted"
         return User.query.join(User.status).filter(
-            User.email == email,
+            func.lower(User.email) == func.lower(email),
             User.status.has(name='deleted') == False
         ).first()
 
