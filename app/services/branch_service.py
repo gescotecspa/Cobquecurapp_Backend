@@ -1,6 +1,7 @@
 from app import db
 from app.models.branch import Branch
 from ..common.image_manager import ImageManager
+from datetime import datetime
 
 class BranchService:
     @staticmethod
@@ -38,8 +39,9 @@ class BranchService:
             # Manejo de la imagen con ImageManager en la actualización
             # print("imprimo partner id------------------------",partner_id)
             if image_data:
+                timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
                 image_manager = ImageManager()
-                filename = f"branches/{partner_id}/{name.replace(' ', '_')}_image.png"  # Cambiar aquí
+                filename = f"branches/{partner_id}/{name.replace(' ', '_')}_image_{timestamp}.png"
                 category = 'branches'
                 image_url = image_manager.upload_image(image_data, filename, category)
                 branch.image_url = image_url
