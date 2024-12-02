@@ -13,8 +13,9 @@ class BranchService:
         # Manejo de la imagen con ImageManager
         image_url = None
         if image_data:
+            timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
             image_manager = ImageManager()
-            filename = f"branches/{partner_id}/{name.replace(' ', '_')}_image.png"  # Cambiar aquí
+            filename = f"branches/{partner_id}/{name.replace(' ', '_')}_image_{timestamp}.png"  # Cambiar aquí
             category = 'branches'
             image_url = image_manager.upload_image(image_data, filename, category)
 
