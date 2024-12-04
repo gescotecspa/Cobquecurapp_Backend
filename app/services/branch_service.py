@@ -1,5 +1,6 @@
 from app import db
 from app.models.branch import Branch
+from app.models.status import Status
 from ..common.image_manager import ImageManager
 from datetime import datetime
 
@@ -76,7 +77,11 @@ class BranchService:
 
     @staticmethod
     def get_all_branches():
-        return Branch.query.all()
+        return (
+            Branch.query.join(Status)
+            .filter(Status.name != 'deleted')
+            .all()
+        )
 
     @staticmethod
     def get_branches_by_partner_id(partner_id):
