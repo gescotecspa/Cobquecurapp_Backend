@@ -2,8 +2,10 @@ from app import db
 from app.models.promotion import Promotion, PromotionImage
 from app.models.category import Category
 from app.common.image_manager import ImageManager
-from app.models import Promotion, Branch
+from app.models import Promotion, Branch, Status 
 from config import Config
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import joinedload
 
 class PromotionService:
     @staticmethod
@@ -138,13 +140,18 @@ class PromotionService:
         attempt = 0
         while attempt < retries:
             try:
-                # Intentar obtener todas las promociones
-                return Promotion.query.all()
+                # Filtrar promociones donde el estado no sea "deleted"
+                return (
+                    Promotion.query.join(Status)
+                    .filter(Status.name != 'deleted')
+                    .options(joinedload(Promotion.status))  # Pre-carga la relación status
+                    .all()
+                )
             except OperationalError as e:
                 attempt += 1
                 print(f"Error de conexión: {e}. Reintentando {attempt}/{retries}...")
-                sleep(delay)  # Esperar un poco antes de reintentar
-        # Si después de varios intentos no se logra, lanzar la excepción
+                sleep(delay)  # Esperar antes de reintentar
+        # Lanzar excepción si después de varios intentos no se logra
         raise OperationalError(f"Fallo después de {retries} intentos")
     
     @staticmethod
