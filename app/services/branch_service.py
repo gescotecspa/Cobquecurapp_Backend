@@ -102,9 +102,9 @@ class BranchService:
         return (
             Branch.query.join(Status)
             .filter(Status.name != 'deleted')
+            .order_by(Branch.name.asc())
             .all()
         )
-
     @staticmethod
     def get_branches_by_partner_id(partner_id):
         return Branch.query.filter_by(partner_id=partner_id).all()
