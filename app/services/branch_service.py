@@ -1,7 +1,9 @@
 from app import db
 from app.models.branch import Branch
+from app.models.status import Status
 from ..common.image_manager import ImageManager
 from datetime import datetime
+from app.services.promotion_service import PromotionService
 
 class BranchService:
     @staticmethod
@@ -38,7 +40,6 @@ class BranchService:
         branch = BranchService.get_branch_by_id(branch_id)
         if branch:
             # Manejo de la imagen con ImageManager en la actualización
-            # print("imprimo partner id------------------------",partner_id)
             if image_data:
                 timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
                 image_manager = ImageManager()
@@ -60,7 +61,29 @@ class BranchService:
             if longitude is not None:
                 branch.longitude = longitude
             if status_id is not None:
-                branch.status_id = status_id  # Asegúrate de que status_id es un entero
+                # Verificar si el estado cambió
+                if branch.status_id != status_id:
+                    # Buscar los estados 'inactive' y 'active'
+                    inactive_status = Status.query.filter_by(name='inactive').first()
+                    active_status = Status.query.filter_by(name='active').first()
+                    
+                    if not inactive_status or not active_status:
+                        raise ValueError("Inactive or Active status not found in the database.")
+
+                    # Actualizar el estado de las promociones asociadas
+                    if status_id == inactive_status.id:
+                        # Cambiar promociones a 'inactive'
+                        promotion_ids = [promo.promotion_id for promo in branch.promotions]
+                        # print("ids de las promociones a inactivar",promotion_ids)
+                        PromotionService.bulk_update_promotions_status(promotion_ids, inactive_status.id)
+                    elif status_id == active_status.id:
+                        # Cambiar promociones a 'active'
+                        promotion_ids = [promo.promotion_id for promo in branch.promotions]
+                        # print("ids de las promociones a activar",promotion_ids)
+                        PromotionService.bulk_update_promotions_status(promotion_ids, active_status.id)
+
+                    # Actualizar el estado de la sucursal
+                    branch.status_id = status_id
 
             db.session.commit()
         return branch
@@ -76,8 +99,12 @@ class BranchService:
 
     @staticmethod
     def get_all_branches():
-        return Branch.query.all()
-
+        return (
+            Branch.query.join(Status)
+            .filter(Status.name != 'deleted')
+            .order_by(Branch.name.asc())
+            .all()
+        )
     @staticmethod
     def get_branches_by_partner_id(partner_id):
         return Branch.query.filter_by(partner_id=partner_id).all()

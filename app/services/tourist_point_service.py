@@ -63,7 +63,11 @@ class TouristPointService:
         return tourist_point.serialize()
 
     def get_all_tourist_points():
-        tourist_points = TouristPoint.query.all()
+        tourist_points = (
+            TouristPoint.query
+            .order_by(TouristPoint.title.asc())
+            .all()
+        )
         return [tp.serialize() for tp in tourist_points]
 
     def get_tourist_point_by_id(tourist_point_id):
