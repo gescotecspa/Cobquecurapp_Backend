@@ -71,16 +71,24 @@ class BranchService:
                         raise ValueError("Inactive or Active status not found in the database.")
 
                     # Actualizar el estado de las promociones asociadas
+            # Filtrar las promociones asociadas según el nuevo estado deseado
                     if status_id == inactive_status.id:
-                        # Cambiar promociones a 'inactive'
-                        promotion_ids = [promo.promotion_id for promo in branch.promotions]
-                        # print("ids de las promociones a inactivar",promotion_ids)
-                        PromotionService.bulk_update_promotions_status(promotion_ids, inactive_status.id)
+                        # Cambiar a 'inactive' solo las promociones que están actualmente 'active'
+                        promotion_ids = [
+                            promo.promotion_id
+                            for promo in branch.promotions
+                            if promo.status_id == active_status.id
+                        ]
                     elif status_id == active_status.id:
-                        # Cambiar promociones a 'active'
-                        promotion_ids = [promo.promotion_id for promo in branch.promotions]
-                        # print("ids de las promociones a activar",promotion_ids)
-                        PromotionService.bulk_update_promotions_status(promotion_ids, active_status.id)
+                        # Cambiar a 'active' solo las promociones que están actualmente 'inactive'
+                        promotion_ids = [
+                            promo.promotion_id
+                            for promo in branch.promotions
+                            if promo.status_id == inactive_status.id
+                        ]
+                    
+                    if promotion_ids:
+                        PromotionService.bulk_update_promotions_status(promotion_ids, status_id)
 
                     # Actualizar el estado de la sucursal
                     branch.status_id = status_id
