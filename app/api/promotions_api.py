@@ -68,8 +68,14 @@ class PromotionBulkDeleteResource(Resource):
             return {'message': 'Promotions updated successfully'}, 200
         return {'message': 'Failed to update promotions'}, 500
     
+class ActivePromotionsResource(Resource):
+    def get(self):
+        promotions = PromotionService.get_active_promotions()
+        return jsonify([promotion.serialize(include_user_info=False, include_branch_name=True) for promotion in promotions])
+    
 api.add_resource(PromotionResource, '/promotions/<int:promotion_id>')
 api.add_resource(PromotionListResource, '/promotions')
 api.add_resource(PromotionImageResource, '/promotion_images/delete')
 api.add_resource(PromotionByPartnerResource, '/partners/<int:partner_id>/promotions')
 api.add_resource(PromotionBulkDeleteResource, '/promotions/bulk_delete')
+api.add_resource(ActivePromotionsResource, '/promotions/active')

@@ -155,6 +155,23 @@ class PromotionService:
         raise OperationalError(f"Fallo después de {retries} intentos")
     
     @staticmethod
+    def get_active_promotions(retries=2, delay=3):
+        attempt = 0
+        while attempt < retries:
+            try:
+                return (
+                    Promotion.query.join(Status)
+                    .filter(Status.name == 'active')
+                    .options(joinedload(Promotion.status))
+                    .all()
+                )
+            except OperationalError as e:
+                attempt += 1
+                print(f"Error de conexión: {e}. Reintentando {attempt}/{retries}...")
+                sleep(delay)
+        raise OperationalError(f"Fallo después de {retries} intentos")
+    
+    @staticmethod
     def delete_promotion_images(image_ids):
         images = PromotionImage.query.filter(PromotionImage.image_id.in_(image_ids)).all()
         if images:
