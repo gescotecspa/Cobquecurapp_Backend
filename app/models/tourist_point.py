@@ -49,17 +49,22 @@ class Rating(db.Model):
     rating = db.Column(db.Integer, nullable=False)
     comment = db.Column(db.String(1000))
     tourist_point_id = db.Column(db.Integer, db.ForeignKey('tourist_points.id'), nullable=False)
-    tourist_id = db.Column(db.Integer, db.ForeignKey('tourists.user_id'), nullable=False)
+    tourist_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=True)
+    
+    # Relación con User (tabla 'users')
+    tourist = db.relationship('User', backref='ratings')
     
     def serialize(self):
         return {
             'id': self.id,
             'tourist_point_id': self.tourist_point_id,
             'tourist_id': self.tourist_id,
+            'tourist_first_name': self.tourist.first_name if self.tourist else None, 
+            'tourist_image_url': self.tourist.image_url if self.tourist else None, 
             'rating': self.rating,
             'comment': self.comment,
-            'created_at': self.created_at.isoformat()  # Formatear la fecha en ISO 8601
+            'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
     __table_args__ = (
