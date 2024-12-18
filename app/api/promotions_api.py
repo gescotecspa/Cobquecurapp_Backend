@@ -68,8 +68,28 @@ class PromotionBulkDeleteResource(Resource):
             return {'message': 'Promotions updated successfully'}, 200
         return {'message': 'Failed to update promotions'}, 500
     
+class ActivePromotionsResource(Resource):
+    def get(self, version=None):
+        if version == 'v2':
+            # Mantener el servicio original, solo ajustando el uso para la versión 2
+            promotions = PromotionService.get_active_promotions()
+            return jsonify([promotion.serialize(include_user_info=False, include_branch_name=True) for promotion in promotions])
+        else:
+            return {'message': 'API version not supported'}, 400
+
+# Nuevo: Versión 2 para promociones activas
+class AllPromotionsResourceVersioned(Resource):
+    def get(self, version):
+        if version == 'v2':
+            promotions = PromotionService.get_all_promotions()
+            return jsonify([promotion.serialize(include_user_info=False, include_branch_name=True) for promotion in promotions])
+        else:
+            return {'message': 'API version not supported'}, 400
+
 api.add_resource(PromotionResource, '/promotions/<int:promotion_id>')
-api.add_resource(PromotionListResource, '/promotions')
 api.add_resource(PromotionImageResource, '/promotion_images/delete')
 api.add_resource(PromotionByPartnerResource, '/partners/<int:partner_id>/promotions')
 api.add_resource(PromotionBulkDeleteResource, '/promotions/bulk_delete')
+api.add_resource(PromotionListResource, '/promotions') # Ruta para promociones activas (version inicial)
+api.add_resource(ActivePromotionsResource, '/<string:version>/promotions/active')  # Ruta para promociones activas (turistas)
+api.add_resource(AllPromotionsResourceVersioned, '/<string:version>/promotions')  # Ruta versionada para todas las promociones sin branch details

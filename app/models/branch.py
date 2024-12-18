@@ -1,4 +1,6 @@
 from app import db
+from sqlalchemy import func
+from app.models.branch_rating import BranchRating
 
 class Branch(db.Model):
     __tablename__ = 'branches'
@@ -16,6 +18,13 @@ class Branch(db.Model):
     promotions = db.relationship('Promotion', backref='branch', lazy=True, cascade='all, delete-orphan')
     status = db.relationship('Status') 
 
+    ratings = db.relationship('BranchRating', backref='branch_instance', lazy=True)
+    
+    def average_rating(self):
+        # Calcular el promedio de las calificaciones de esta sucursal
+        avg_rating = db.session.query(func.avg(BranchRating.rating)).filter(BranchRating.branch_id == self.branch_id).scalar()
+        return round(avg_rating, 1) if avg_rating is not None else 0.0
+    
     def serialize(self):
         return {
             "branch_id": self.branch_id,
@@ -27,6 +36,7 @@ class Branch(db.Model):
             "longitude": self.longitude,
             "status": self.status.serialize() if self.status else None,
             "image_url": self.image_url,
+            "average_rating": self.average_rating()
         }
 
     def __repr__(self):
