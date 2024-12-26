@@ -63,8 +63,13 @@ class TouristPointService:
         return tourist_point.serialize()
 
     def get_all_tourist_points():
+        active_status = Status.query.filter_by(name="active").first()
+        if not active_status:
+            return []
+
         tourist_points = (
             TouristPoint.query
+            .filter_by(status_id=active_status.id)
             .order_by(TouristPoint.title.asc())
             .all()
         )
@@ -205,3 +210,17 @@ class TouristPointService:
             return tourist_point.serialize()
         
         return None    
+    
+    def get_all_except_deleted():
+        deleted_status = Status.query.filter_by(name="deleted").first()
+        
+        if not deleted_status:
+            tourist_points = TouristPoint.query.order_by(TouristPoint.title.asc()).all()
+        else:
+            tourist_points = (
+                TouristPoint.query
+                .filter(TouristPoint.status_id != deleted_status.id)
+                .order_by(TouristPoint.title.asc())
+                .all()
+            )
+        return [tp.serialize() for tp in tourist_points]
