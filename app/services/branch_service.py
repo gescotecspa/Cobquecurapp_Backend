@@ -39,6 +39,8 @@ class BranchService:
     def update_branch(branch_id, partner_id=None, name=None, description=None, address=None, latitude=None, longitude=None, status_id=None, image_data=None):
         branch = BranchService.get_branch_by_id(branch_id)
         if branch:
+            if partner_id is None:
+                partner_id = branch.partner_id
             # Manejo de la imagen con ImageManager en la actualización
             if image_data:
                 timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
@@ -71,6 +73,7 @@ class BranchService:
                         raise ValueError("Inactive or Active status not found in the database.")
 
                     # Actualizar el estado de las promociones asociadas
+                    promotion_ids = []
             # Filtrar las promociones asociadas según el nuevo estado deseado
                     if status_id == inactive_status.id:
                         # Cambiar a 'inactive' solo las promociones que están actualmente 'active'
