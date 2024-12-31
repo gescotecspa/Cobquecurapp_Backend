@@ -39,6 +39,21 @@ class BranchRatingUpdateResource(Resource):
         if deleted_rating:
             return {'message': 'Rating deleted'}, 200
         return {'message': 'Rating not found'}, 404
+    
+class BranchRatingSoftDeleteResource(Resource):
+    def delete(self, rating_id):
+        deleted_rating = BranchRatingService.soft_delete_rating(rating_id)
+        if deleted_rating:
+            return {'message': 'Rating logically deleted'}, 200
+        return {'message': 'Rating not found'}, 404
+    
+class BranchRatingApproveResource(Resource):
+    def put(self, rating_id):
+        # Llama al servicio para aprobar la valoración
+        approved_rating = BranchRatingService.approve_rating(rating_id)
+        if approved_rating:
+            return approved_rating.serialize(), 200
+        return {'message': 'Rating not found or already approved'}, 404
 
 class BranchRatingsListResource(Resource):
     def get(self, branch_id):
@@ -63,4 +78,6 @@ api.add_resource(BranchRatingResource, '/branches/<int:branch_id>/ratings')
 api.add_resource(BranchRatingUpdateResource, '/branches/ratings/<int:rating_id>')
 api.add_resource(BranchRatingsListResource, '/branches/<int:branch_id>/ratings/all')
 api.add_resource(BranchAverageRatingResource, '/branches/<int:branch_id>/average_rating')
+api.add_resource(BranchRatingSoftDeleteResource, '/branches/ratings/soft_delete/<int:rating_id>')
+api.add_resource(BranchRatingApproveResource, '/branches/ratings/approve/<int:rating_id>')
 

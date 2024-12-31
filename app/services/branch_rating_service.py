@@ -1,6 +1,7 @@
 from app import db
 from app.models import BranchRating
 from app.models.user import User
+from app.models.status import Status
 
 class BranchRatingService:
     @staticmethod
@@ -14,20 +15,31 @@ class BranchRatingService:
         existing_rating = BranchRatingService.get_rating_by_branch_and_tourist(branch_id, user_id)
         if existing_rating:
             return None  # Ya existe una valoración para esta combinación
+        
+        pending_status = Status.query.filter_by(name="pending").first()
+        if not pending_status:
+            raise ValueError("El estado 'Pending' no existe en la tabla statuses.")
 
-        new_rating = BranchRating(branch_id=branch_id, user_id=user_id, rating=rating, comment=comment)
+        new_rating = BranchRating(branch_id=branch_id, user_id=user_id, rating=rating, comment=comment, status_id=pending_status.id)
         db.session.add(new_rating)
         db.session.commit()
         return new_rating
 
     @staticmethod
-    def update_rating(rating_id, rating, comment):
+    def update_rating(rating_id, rating, comment, status_id=None):
         try:
             # Busca la calificación por su ID
             rating_record = BranchRating.query.get(rating_id)
             if rating_record:
                 rating_record.rating = rating
                 rating_record.comment = comment
+                
+                if status_id:
+                    status = Status.query.get(status_id)
+                    if not status:
+                        raise ValueError(f"El estado con ID {status_id} no existe.")
+                    rating_record.status_id = status_id
+                    
                 db.session.commit()
                 return rating_record
             return None
@@ -48,14 +60,65 @@ class BranchRatingService:
         except Exception as e:
             db.session.rollback()
             raise e
+    
+    @staticmethod
+    def soft_delete_rating(rating_id):
+        try:
+            # Realiza un borrado lógico, actualizando el campo `deleted_at` y el estado a 'Deleted'
+            rating_record = BranchRating.query.get(rating_id)
+            if rating_record:
+                deleted_status = Status.query.filter_by(name="deleted").first()
+                if not deleted_status:
+                    raise ValueError("El estado 'Deleted' no existe en la tabla statuses.")
+                rating_record.status_id = deleted_status.id 
+                rating_record.deleted_at = db.func.current_timestamp()
+                db.session.commit()
+                return rating_record
+            return None
+        except Exception as e:
+            db.session.rollback()
+            raise e
+            
     @staticmethod
     def get_all_ratings_for_branch(branch_id):
-        return db.session.query(BranchRating, User.first_name).join(User, BranchRating.user_id == User.user_id).filter(BranchRating.branch_id == branch_id).all()
+    # Filtra las valoraciones de la sucursal, excluyendo las que tienen el estado 'deleted'
+        deleted_status = Status.query.filter_by(name="deleted").first()
+        return db.session.query(BranchRating, User.first_name).join(
+            User, BranchRating.user_id == User.user_id
+        ).filter(
+            BranchRating.branch_id == branch_id,
+            (BranchRating.status_id != deleted_status.id) | (BranchRating.status_id == None)
+        ).all()
 
     @staticmethod
+    # Filtra las valoraciones de la sucursal que estén en estado 'pending' o 'approved'
     def get_average_rating_for_branch(branch_id):
-        ratings = BranchRating.query.filter_by(branch_id=branch_id).all()
+        ratings = BranchRating.query.filter(
+            BranchRating.branch_id == branch_id,
+            BranchRating.status_id.in_([Status.query.filter_by(name="pending").first().id,
+                                        Status.query.filter_by(name="approved").first().id, 
+                                        None])
+        ).all()
+
         if not ratings:
             return 0
+
         total_rating = sum(rating.rating for rating in ratings)
         return total_rating / len(ratings)
+    
+    @staticmethod
+    def approve_rating(rating_id):
+        try:
+            # Busca la valoración por su ID
+            rating_record = BranchRating.query.get(rating_id)
+            if rating_record and rating_record.status.name == 'pending':
+                # Cambia el estado a 'approved'
+                approved_status = Status.query.filter_by(name='approved').first()
+                if approved_status:
+                    rating_record.status_id = approved_status.id
+                    db.session.commit()
+                    return rating_record
+            return None
+        except Exception as e:
+            db.session.rollback()
+            raise e

@@ -1,6 +1,8 @@
 from app import db
 from sqlalchemy import func
 from app.models.branch_rating import BranchRating
+from app.models.status import Status
+from sqlalchemy import or_
 
 class Branch(db.Model):
     __tablename__ = 'branches'
@@ -22,7 +24,18 @@ class Branch(db.Model):
     
     def average_rating(self):
         # Calcular el promedio de las calificaciones de esta sucursal
-        avg_rating = db.session.query(func.avg(BranchRating.rating)).filter(BranchRating.branch_id == self.branch_id).scalar()
+        approved_status = Status.query.filter_by(name='approved').first()
+        pending_status = Status.query.filter_by(name='pending').first()
+        
+        avg_rating = db.session.query(func.avg(BranchRating.rating)).filter(
+        BranchRating.branch_id == self.branch_id,
+        or_(
+            BranchRating.status_id == approved_status.id,
+            BranchRating.status_id == pending_status.id,
+            BranchRating.status_id.is_(None)
+        )
+    ).scalar()
+        
         return round(avg_rating, 1) if avg_rating is not None else 0.0
     
     def serialize(self):
