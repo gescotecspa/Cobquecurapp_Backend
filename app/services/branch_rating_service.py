@@ -93,18 +93,22 @@ class BranchRatingService:
     @staticmethod
     # Filtra las valoraciones de la sucursal que estén en estado 'pending' o 'approved'
     def get_average_rating_for_branch(branch_id):
+        # Filtrar las valoraciones en los estados 'pending', 'approved' o con estado NULL
+        pending_status_id = Status.query.filter_by(name="pending").first().id
+        approved_status_id = Status.query.filter_by(name="approved").first().id
+
         ratings = BranchRating.query.filter(
             BranchRating.branch_id == branch_id,
-            BranchRating.status_id.in_([Status.query.filter_by(name="pending").first().id,
-                                        Status.query.filter_by(name="approved").first().id, 
-                                        None])
+            BranchRating.status_id.in_([pending_status_id, approved_status_id]) | (BranchRating.status_id == None),
+            BranchRating.rating != None  # Excluye las valoraciones con rating NULL
         ).all()
 
         if not ratings:
             return 0
 
-        total_rating = sum(rating.rating for rating in ratings)
+        total_rating = sum(rating.rating for rating in ratings if rating.rating is not None)
         return total_rating / len(ratings)
+
     
     @staticmethod
     def approve_rating(rating_id):
