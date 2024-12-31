@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_restful import Api, Resource
 from app.services.tourist_rating_service import TouristRatingService
+from app.models.status import Status
 
 tourist_rating_api_blueprint = Blueprint('tourist_rating_api', __name__)
 api = Api(tourist_rating_api_blueprint)
@@ -18,11 +19,15 @@ class TouristRatingResource(Resource):
         if branch_id is None or rating is None:
             return jsonify({'message': 'Missing branch_id or rating'}), 400
 
+        # Asignar status "pending" por defecto
+        status_pending = Status.query.filter_by(name="pending").first()
+
         new_rating, error_message = TouristRatingService.create_rating(
             tourist_id,
             branch_id,
             rating,
-            comment
+            comment,
+            status_pending.id
         )
         if new_rating:
             return new_rating.serialize(), 201
@@ -30,15 +35,23 @@ class TouristRatingResource(Resource):
     
 class TouristRatingUpdateResource(Resource):
     def put(self, rating_id):
-        data = request.get_json()
-        rating = TouristRatingService.update_rating(
-            rating_id,
-            data['rating'],
-            data.get('comment')
-        )
-        if rating:
-            return rating.serialize(), 200
-        return {'message': 'Rating not found'}, 404
+            data = request.get_json()
+            
+            # Obtener los datos de la valoración a actualizar
+            rating_value = data.get('rating')
+            comment = data.get('comment')
+            status_id = data.get('status_id')
+
+            updated_rating = TouristRatingService.update_rating(
+                rating_id,
+                rating_value,
+                comment,
+                status_id 
+            )
+            
+            if updated_rating:
+                return updated_rating.serialize(), 200
+            return {'message': 'Rating not found'}, 404
 
     def delete(self, rating_id):
         rating = TouristRatingService.delete_rating(rating_id)
@@ -62,8 +75,16 @@ class TouristAverageRatingResource(Resource):
     def get(self, tourist_id):
         avg_rating = TouristRatingService.get_average_rating_for_tourist(tourist_id)
         return jsonify({'average_rating': avg_rating}), 200
+    
+class TouristRatingApprovalResource(Resource):
+    def put(self, rating_id):
+        updated_rating, error = TouristRatingService.approve_rating(rating_id)
+        if updated_rating:
+            return updated_rating.serialize(), 200
+        return {'message': error}, 404    
 
 api.add_resource(TouristRatingResource, '/tourists/<int:tourist_id>/ratings')
 api.add_resource(TouristRatingUpdateResource, '/tourists/ratings/<int:rating_id>')
 api.add_resource(TouristRatingsListResource, '/tourists/<int:tourist_id>/ratings/all')
 api.add_resource(TouristAverageRatingResource, '/tourists/<int:tourist_id>/average_rating')
+api.add_resource(TouristRatingApprovalResource, '/tourists/ratings/approve/<int:rating_id>')

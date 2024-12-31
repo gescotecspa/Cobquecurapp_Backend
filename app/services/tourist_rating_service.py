@@ -1,5 +1,6 @@
 from app import db
 from app.models import TouristRating
+from app.models.status import Status
 
 class TouristRatingService:
     @staticmethod
@@ -7,23 +8,34 @@ class TouristRatingService:
         return TouristRating.query.filter_by(tourist_id=tourist_id, branch_id=branch_id).first()
 
     @staticmethod
-    def create_rating(tourist_id, branch_id, rating, comment=None):
+    def create_rating(tourist_id, branch_id, rating, comment=None, status_id=None):
+        # Verificar si ya existe una valoración para el turista y la sucursal
         existing_rating = TouristRatingService.get_rating_by_tourist_and_branch(tourist_id, branch_id)
         if existing_rating:
-            # Devolver None o lanzar una excepción si ya existe la valoración
             return None, 'Rating already exists for this branch and tourist'
 
-        new_rating = TouristRating(tourist_id=tourist_id, branch_id=branch_id, rating=rating, comment=comment)
+        # Si no se proporciona status_id, asignamos "pending" por defecto
+        if not status_id:
+            status_id = Status.query.filter_by(name="pending").first().id
+
+        # Crear la nueva valoración
+        new_rating = TouristRating(tourist_id=tourist_id, branch_id=branch_id, rating=rating, comment=comment, status_id=status_id)
         db.session.add(new_rating)
         db.session.commit()
         return new_rating, None
     
     @staticmethod
-    def update_rating(rating_id, rating, comment=None):
+    def update_rating(rating_id, rating, comment=None, status_id=None):
         existing_rating = TouristRating.query.get(rating_id)
         if existing_rating:
+            # Actualizamos la valoración
             existing_rating.rating = rating
             existing_rating.comment = comment
+            
+            # Si se pasa un status_id, lo actualizamos
+            if status_id is not None:
+                existing_rating.status_id = status_id
+
             db.session.commit()
             return existing_rating
         return None
@@ -32,18 +44,43 @@ class TouristRatingService:
     def delete_rating(rating_id):
         existing_rating = TouristRating.query.get(rating_id)
         if existing_rating:
-            db.session.delete(existing_rating)
+            deleted_status = Status.query.filter_by(name="deleted").first()
+            existing_rating.status_id = deleted_status.id
+            existing_rating.deleted_at = db.func.current_timestamp()
+
             db.session.commit()
             return existing_rating
         return None
 
     @staticmethod
     def get_all_ratings_for_tourist(tourist_id):
-        return TouristRating.query.filter_by(tourist_id=tourist_id).all()
+        # Filtramos las valoraciones para que no incluyan 'deleted' o 'rejected'
+        active_status_ids = [status.id for status in Status.query.filter(Status.name.in_(['pending', 'approved'])).all()]
+        return TouristRating.query.filter_by(tourist_id=tourist_id).filter(
+            TouristRating.status_id.in_(active_status_ids)
+        ).all()
 
     @staticmethod
     def get_average_rating_for_tourist(tourist_id):
-        ratings = TouristRating.query.filter_by(tourist_id=tourist_id).all()
+        active_status_ids = [status.id for status in Status.query.filter(Status.name.in_(['pending', 'approved'])).all()]
+        ratings = TouristRating.query.filter_by(tourist_id=tourist_id).filter(
+            TouristRating.status_id.in_(active_status_ids)
+        ).all()
+
         if ratings:
-            return sum(r.rating for r in ratings) / len(ratings)
+            return sum(rating.rating for rating in ratings) / len(ratings)
         return 0
+
+    @staticmethod
+    def approve_rating(rating_id):
+        approved_status = Status.query.filter_by(name="approved").first()
+        if not approved_status:
+            return None, "Approved status not found"
+
+        rating = TouristRating.query.get(rating_id)
+        if not rating:
+            return None, "Rating not found"
+
+        rating.status_id = approved_status.id
+        db.session.commit()
+        return rating, None
