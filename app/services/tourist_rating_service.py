@@ -25,14 +25,14 @@ class TouristRatingService:
         return new_rating, None
     
     @staticmethod
-    def update_rating(rating_id, rating, comment=None, status_id=None):
+    def update_rating(rating_id, rating=None, comment=None, status_id=None):
         existing_rating = TouristRating.query.get(rating_id)
         if existing_rating:
-            # Actualizamos la valoración
-            existing_rating.rating = rating
-            existing_rating.comment = comment
-            
-            # Si se pasa un status_id, lo actualizamos
+            # Actualizamos los valores solo si se pasan como argumentos
+            if rating is not None:
+                existing_rating.rating = rating
+            if comment is not None:
+                existing_rating.comment = comment
             if status_id is not None:
                 existing_rating.status_id = status_id
 
