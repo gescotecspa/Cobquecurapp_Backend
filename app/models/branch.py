@@ -18,7 +18,7 @@ class Branch(db.Model):
     promotions = db.relationship('Promotion', backref='branch', lazy=True, cascade='all, delete-orphan')
     status = db.relationship('Status') 
 
-    ratings = db.relationship('BranchRating', backref='branch_instance', lazy=True)
+    ratings = db.relationship('BranchRating', back_populates='branch', lazy=True)
     
     def average_rating(self):
         # Calcular el promedio de las calificaciones de esta sucursal

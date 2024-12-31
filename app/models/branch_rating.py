@@ -10,7 +10,7 @@ class BranchRating(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('tourists.user_id'), nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=True)
     
-    branch = db.relationship('Branch', backref='branch_ratings')
+    branch = db.relationship('Branch', back_populates='ratings')
     tourist = db.relationship('Tourist', backref='tourist_branch_ratings')
 
     def serialize(self, first_name=None):
