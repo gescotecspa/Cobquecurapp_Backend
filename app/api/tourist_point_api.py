@@ -70,7 +70,28 @@ class RatingResource(Resource):
         data = request.get_json()
         rating = TouristPointService.add_rating(id, data['tourist_id'], data['rating'], data.get('comment'))
         return rating
+
+class RatingVersionedResource(Resource):
     
+    def get(self, id, version):
+        """
+        Obtener todas las valoraciones de un punto turístico específico.
+        """
+        if version == 'v2':
+            ratings = TouristPointService.get_ratings_by_tourist_point(id)
+            if not ratings:
+                return {'message': 'No ratings found for this tourist point.'}, 404
+            
+            average_rating = TouristPointService.get_average_rating(id)
+            
+            response = {
+            'ratings': [rating.serialize() for rating in ratings],
+            'average_rating': average_rating['average_rating']
+            }
+            return response, 200
+        else:
+            return {'message': 'API version not supported'}, 400
+
 class AllTouristPointListResource(Resource):
     def get(self):
         """
@@ -121,3 +142,4 @@ api.add_resource(RatingDetailResource, '/ratings/<int:rating_id>')
 api.add_resource(AverageRatingResource, '/tourist_points/<int:id>/average_rating')
 api.add_resource(ImageDeleteResource, '/tourist_points/<int:id>/images/delete')
 api.add_resource(AllTouristPointListResource, '/tourist_points/active-inactive')
+api.add_resource(RatingVersionedResource, '/<string:version>/tourist_points/<int:id>/ratings')
