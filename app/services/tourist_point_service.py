@@ -2,6 +2,7 @@ from app.models import TouristPoint, Image, Rating, Status
 from app import db
 from ..common.image_manager import ImageManager
 from config import Config
+from datetime import datetime, timedelta
 
 
 class TouristPointService:
@@ -255,3 +256,21 @@ class TouristPointService:
                 .all()
             )
         return [tp.serialize() for tp in tourist_points]
+    
+    @staticmethod
+    def get_comments_last_4_weeks():
+        """
+        Obtiene los comentarios de los puntos turísticos de la última semana, incluyendo aquellos con estado 'deleted'.
+        """
+        one_week_ago = datetime.now() - timedelta(weeks=4)
+        
+        deleted_status = Status.query.filter_by(name="deleted").first()
+        if not deleted_status:
+            return {'error': 'Deleted status not found in database'}, 500
+        
+        comments = Rating.query.filter(
+            Rating.created_at >= one_week_ago,
+            (Rating.status_id != deleted_status.id) | (Rating.status_id == None)
+        ).all()
+        
+        return [comment.serialize() for comment in comments]

@@ -2,6 +2,7 @@ from app import db
 from app.models import BranchRating
 from app.models.user import User
 from app.models.status import Status
+from datetime import datetime, timedelta
 
 class BranchRatingService:
     @staticmethod
@@ -126,3 +127,23 @@ class BranchRatingService:
         except Exception as e:
             db.session.rollback()
             raise e
+
+    @staticmethod
+    def get_ratings_last_4_weeks():
+        """
+        Obtiene todas las valoraciones de las últimas 4 semanas, asegurándose de que no tengan el estado 'deleted'.
+        """
+        four_weeks_ago = datetime.now() - timedelta(weeks=4)
+        
+        # Buscar el estado 'deleted'
+        deleted_status = Status.query.filter_by(name="deleted").first()
+        if not deleted_status:
+            return {'error': 'Deleted status not found in database'}, 500
+        
+        # Filtrar las valoraciones que fueron hechas en las últimas 4 semanas y no tengan el estado 'deleted'
+        ratings = BranchRating.query.filter(
+            BranchRating.created_at >= four_weeks_ago,
+            (BranchRating.status_id != deleted_status.id) | (BranchRating.status_id == None)
+        ).all()
+        
+        return [rating.serialize() for rating in ratings]

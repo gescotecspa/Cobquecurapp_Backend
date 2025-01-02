@@ -1,6 +1,7 @@
 from app import db
 from app.models import TouristRating
 from app.models.status import Status
+from datetime import datetime, timedelta
 
 class TouristRatingService:
     @staticmethod
@@ -84,3 +85,23 @@ class TouristRatingService:
         rating.status_id = approved_status.id
         db.session.commit()
         return rating, None
+    
+    @staticmethod
+    def get_ratings_last_4_weeks():
+        """
+        Obtiene todas las valoraciones de los turistas de las últimas 4 semanas, asegurándose de que no tengan el estado 'deleted'.
+        """
+        four_weeks_ago = datetime.now() - timedelta(weeks=4)
+        
+        # Buscar el estado 'deleted'
+        deleted_status = Status.query.filter_by(name="deleted").first()
+        if not deleted_status:
+            return {'error': 'Deleted status not found in database'}, 500
+        
+        # Filtrar las valoraciones que fueron hechas en las últimas 4 semanas y no tengan el estado 'deleted'
+        ratings = TouristRating.query.filter(
+            TouristRating.created_at >= four_weeks_ago,
+            (TouristRating.status_id != deleted_status.id) | (TouristRating.status_id == None)
+        ).all()
+        
+        return [rating.serialize() for rating in ratings]

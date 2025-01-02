@@ -73,6 +73,17 @@ class BranchAverageRatingResource(Resource):
     def get(self, branch_id):
         avg_rating = BranchRatingService.get_average_rating_for_branch(branch_id)
         return jsonify({'average_rating': avg_rating}), 200
+    
+class BranchRatingsLast4WeeksResource(Resource):
+    def get(self):
+        """
+        Obtiene las valoraciones de una sucursal de las últimas 4 semanas.
+        """
+        ratings = BranchRatingService.get_ratings_last_4_weeks()
+        if not ratings:
+            return {'message': 'No ratings found for this branch in the last 4 weeks'}, 404
+        
+        return ratings, 200
 
 api.add_resource(BranchRatingResource, '/branches/<int:branch_id>/ratings')
 api.add_resource(BranchRatingUpdateResource, '/branches/ratings/<int:rating_id>')
@@ -80,4 +91,5 @@ api.add_resource(BranchRatingsListResource, '/branches/<int:branch_id>/ratings/a
 api.add_resource(BranchAverageRatingResource, '/branches/<int:branch_id>/average_rating')
 api.add_resource(BranchRatingSoftDeleteResource, '/branches/ratings/soft_delete/<int:rating_id>')
 api.add_resource(BranchRatingApproveResource, '/branches/ratings/approve/<int:rating_id>')
+api.add_resource(BranchRatingsLast4WeeksResource, '/branches/ratings/last_4_weeks')
 

@@ -134,6 +134,14 @@ class ImageDeleteResource(Resource):
         else:
             return {'message': 'Failed to delete images'}, 500
         
+class TouristPointCommentsLastWeekResource(Resource):
+    def get(self):
+        """
+        Obtiene los comentarios de los puntos turísticos de la última semana.
+        """
+        ratings = TouristPointService.get_comments_last_4_weeks()
+        return ratings, 200
+        
 api.add_resource(TouristPointResource, '/tourist_points/<int:id>')
 api.add_resource(TouristPointListResource, '/tourist_points')
 api.add_resource(ImageResource, '/tourist_points/<int:id>/images')
@@ -143,3 +151,4 @@ api.add_resource(AverageRatingResource, '/tourist_points/<int:id>/average_rating
 api.add_resource(ImageDeleteResource, '/tourist_points/<int:id>/images/delete')
 api.add_resource(AllTouristPointListResource, '/tourist_points/active-inactive')
 api.add_resource(RatingVersionedResource, '/<string:version>/tourist_points/<int:id>/ratings')
+api.add_resource(TouristPointCommentsLastWeekResource, '/tourist_points/ratings/last_week')
