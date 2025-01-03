@@ -20,7 +20,7 @@ class TouristRatingService:
             status_id = Status.query.filter_by(name="pending").first().id
 
         # Crear la nueva valoración
-        new_rating = TouristRating(tourist_id=tourist_id, branch_id=branch_id, rating=rating, comment=comment, status_id=status_id)
+        new_rating = TouristRating(tourist_id=tourist_id, branch_id=branch_id, rating=rating, comment=comment, status_id=status_id, user_id=tourist_id)
         db.session.add(new_rating)
         db.session.commit()
         return new_rating, None
