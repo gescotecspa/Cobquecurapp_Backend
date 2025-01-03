@@ -84,11 +84,14 @@ class BranchRatingService:
     def get_all_ratings_for_branch(branch_id):
     # Filtra las valoraciones de la sucursal, excluyendo las que tienen el estado 'deleted'
         deleted_status = Status.query.filter_by(name="deleted").first()
+        rejected_status = Status.query.filter_by(name="rejected").first()
         return db.session.query(BranchRating, User.first_name).join(
             User, BranchRating.user_id == User.user_id
         ).filter(
             BranchRating.branch_id == branch_id,
-            (BranchRating.status_id != deleted_status.id) | (BranchRating.status_id == None)
+            (BranchRating.status_id != deleted_status.id) & 
+            (BranchRating.status_id != rejected_status.id) | 
+            (BranchRating.status_id == None)
         ).all()
 
     @staticmethod
@@ -101,7 +104,7 @@ class BranchRatingService:
         ratings = BranchRating.query.filter(
             BranchRating.branch_id == branch_id,
             BranchRating.status_id.in_([pending_status_id, approved_status_id]) | (BranchRating.status_id == None),
-            BranchRating.rating != None  # Excluye las valoraciones con rating NULL
+            BranchRating.rating != None
         ).all()
 
         if not ratings:
