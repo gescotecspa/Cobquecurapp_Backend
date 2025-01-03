@@ -147,29 +147,35 @@ class TouristPointService:
 
     def get_average_rating(tourist_point_id):
         deleted_status = Status.query.filter_by(name="deleted").first()
+        rejected_status = Status.query.filter_by(name="rejected").first()
 
-        if not deleted_status:
-            return {'error': 'Deleted status not found in database'}, 500
+        if not deleted_status or not rejected_status:
+            return {'error': 'Deleted or Rejected status not found in database'}, 500
         
         ratings = Rating.query.filter(
             Rating.tourist_point_id == tourist_point_id,
-            (Rating.status_id != deleted_status.id) | (Rating.status_id == None)
+            (Rating.status_id != deleted_status.id) & 
+            (Rating.status_id != rejected_status.id) | 
+            (Rating.status_id == None)
         ).all()
         if not ratings:
-            return {'average_rating': 'No ratings yet'}
+            return 0
         avg_rating = sum(r.rating for r in ratings) / len(ratings)
         return {'average_rating': avg_rating}
 
     def get_ratings_by_tourist_point(tourist_point_id):
         deleted_status = Status.query.filter_by(name="deleted").first()
+        rejected_status = Status.query.filter_by(name="rejected").first()
 
-        if not deleted_status:
-            return {'error': 'Deleted status not found in database'}, 500
+        if not deleted_status or not rejected_status:
+            return {'error': 'Deleted or Rejected status not found in database'}, 500
 
         # Filtrar las valoraciones que no están "deleted"
         return Rating.query.filter(
             Rating.tourist_point_id == tourist_point_id,
-            (Rating.status_id != deleted_status.id) | (Rating.status_id == None)
+            (Rating.status_id != deleted_status.id) & 
+            (Rating.status_id != rejected_status.id) | 
+            (Rating.status_id == None)
         ).all()
 
     def delete_tourist_point_images(image_ids):

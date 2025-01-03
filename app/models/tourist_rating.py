@@ -24,6 +24,7 @@ class TouristRating(db.Model):
         return {
             'id': self.id,
             'branch_id': self.branch_id,
+            'branch_name': self.branch.name if self.branch else None,
             'tourist_id': self.tourist_id,
             'tourist_email': self.user.email if self.user else None,
             'rating': self.rating,
