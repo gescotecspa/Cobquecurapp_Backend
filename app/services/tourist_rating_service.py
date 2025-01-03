@@ -105,6 +105,24 @@ class TouristRatingService:
         return rating, None
     
     @staticmethod
+    def reject_rating(rating_id):
+        try:
+            rejected_status = Status.query.filter_by(name="rejected").first()
+            if not rejected_status:
+                raise ValueError("Approved status not found")
+
+            rating = TouristRating.query.get(rating_id)
+            if not rating:
+                raise ValueError("Rating not found")
+
+            rating.status_id = rejected_status.id
+            db.session.commit()
+            return rating
+        except Exception as e:
+            db.session.rollback()
+            raise e
+    
+    @staticmethod
     def get_ratings_last_4_weeks():
         """
         Obtiene todas las valoraciones de los turistas de las últimas 4 semanas, asegurándose de que no tengan el estado 'deleted'.

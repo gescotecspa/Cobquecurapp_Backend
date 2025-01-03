@@ -55,6 +55,15 @@ class BranchRatingApproveResource(Resource):
             return approved_rating.serialize(), 200
         return {'message': 'Rating not found or already approved'}, 404
 
+class BranchRatingRejectResource(Resource):
+    def put(self, rating_id):
+        # Llama al servicio para aprobar la valoración
+        rejected_rating = BranchRatingService.reject_rating(rating_id)
+        if rejected_rating:
+            return rejected_rating.serialize(), 200
+        return {'message': 'Rating not found or already approved'}, 404    
+ 
+
 class BranchRatingsListResource(Resource):
     def get(self, branch_id):
         ratings_with_names = BranchRatingService.get_all_ratings_for_branch(branch_id)
@@ -91,5 +100,6 @@ api.add_resource(BranchRatingsListResource, '/branches/<int:branch_id>/ratings/a
 api.add_resource(BranchAverageRatingResource, '/branches/<int:branch_id>/average_rating')
 api.add_resource(BranchRatingSoftDeleteResource, '/branches/ratings/soft_delete/<int:rating_id>')
 api.add_resource(BranchRatingApproveResource, '/branches/ratings/approve/<int:rating_id>')
+api.add_resource(BranchRatingRejectResource, '/branches/ratings/reject/<int:rating_id>')
 api.add_resource(BranchRatingsLast4WeeksResource, '/branches/ratings/last_4_weeks')
 

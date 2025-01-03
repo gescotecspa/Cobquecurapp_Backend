@@ -141,7 +141,21 @@ class TouristPointCommentsLastWeekResource(Resource):
         """
         ratings = TouristPointService.get_comments_last_4_weeks()
         return ratings, 200
-        
+    
+class TouristPointRatingApprovalResource(Resource):
+    def put(self, rating_id):
+        updated_rating, error = TouristPointService.approve_rating(rating_id)
+        if updated_rating:
+            return updated_rating.serialize(), 200
+        return {'message': error}, 404    
+    
+class TouristRatingRejectResource(Resource):
+    def put(self, rating_id):
+        rejected_rating = TouristPointService.reject_rating(rating_id)
+        if rejected_rating:
+            return rejected_rating.serialize(), 200
+        return {'message': 'Rating not found or already approved'}, 404  
+          
 api.add_resource(TouristPointResource, '/tourist_points/<int:id>')
 api.add_resource(TouristPointListResource, '/tourist_points')
 api.add_resource(ImageResource, '/tourist_points/<int:id>/images')
@@ -152,3 +166,5 @@ api.add_resource(ImageDeleteResource, '/tourist_points/<int:id>/images/delete')
 api.add_resource(AllTouristPointListResource, '/tourist_points/active-inactive')
 api.add_resource(RatingVersionedResource, '/<string:version>/tourist_points/<int:id>/ratings')
 api.add_resource(TouristPointCommentsLastWeekResource, '/tourist_points/ratings/last_week')
+api.add_resource(TouristPointRatingApprovalResource, '/tourist_points/ratings/approve/<int:rating_id>')
+api.add_resource(TouristRatingRejectResource, '/tourist_points/ratings/reject/<int:rating_id>')

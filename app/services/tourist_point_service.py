@@ -280,3 +280,35 @@ class TouristPointService:
         ).all()
         
         return [comment.serialize() for comment in comments]
+    
+    @staticmethod
+    def approve_rating(rating_id):
+        approved_status = Status.query.filter_by(name="approved").first()
+        if not approved_status:
+            return None, "Approved status not found"
+
+        rating = Rating.query.get(rating_id)
+        if not rating:
+            return None, "Rating not found"
+
+        rating.status_id = approved_status.id
+        db.session.commit()
+        return rating, None
+    
+    @staticmethod
+    def reject_rating(rating_id):
+        try:
+            rejected_status = Status.query.filter_by(name="rejected").first()
+            if not rejected_status:
+                raise ValueError("Approved status not found")
+
+            rating = Rating.query.get(rating_id)
+            if not rating:
+                raise ValueError("Rating not found")
+
+            rating.status_id = rejected_status.id
+            db.session.commit()
+            return rating
+        except Exception as e:
+            db.session.rollback()
+            raise e

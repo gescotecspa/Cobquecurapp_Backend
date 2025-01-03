@@ -113,20 +113,38 @@ class BranchRatingService:
         total_rating = sum(rating.rating for rating in ratings if rating.rating is not None)
         return total_rating / len(ratings)
 
-    
     @staticmethod
     def approve_rating(rating_id):
         try:
-            # Busca la valoración por su ID
-            rating_record = BranchRating.query.get(rating_id)
-            if rating_record and rating_record.status.name == 'pending':
-                # Cambia el estado a 'approved'
-                approved_status = Status.query.filter_by(name='approved').first()
-                if approved_status:
-                    rating_record.status_id = approved_status.id
-                    db.session.commit()
-                    return rating_record
-            return None
+            approved_status = Status.query.filter_by(name="approved").first()
+            if not approved_status:
+                raise ValueError("Approved status not found")
+
+            rating = BranchRating.query.get(rating_id)
+            if not rating:
+                raise ValueError("Rating not found")
+
+            rating.status_id = approved_status.id
+            db.session.commit()
+            return rating
+        except Exception as e:
+            db.session.rollback()
+            raise e
+
+    @staticmethod
+    def reject_rating(rating_id):
+        try:
+            rejected_status = Status.query.filter_by(name="rejected").first()
+            if not rejected_status:
+                raise ValueError("Approved status not found")
+
+            rating = BranchRating.query.get(rating_id)
+            if not rating:
+                raise ValueError("Rating not found")
+
+            rating.status_id = rejected_status.id
+            db.session.commit()
+            return rating
         except Exception as e:
             db.session.rollback()
             raise e
