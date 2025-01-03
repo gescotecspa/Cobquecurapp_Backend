@@ -22,8 +22,8 @@ def upgrade():
         batch_op.drop_constraint('ratings_tourist_id_fkey', type_='foreignkey')
         batch_op.create_foreign_key(None, 'users', ['tourist_id'], ['user_id'])
 
-    with op.batch_alter_table('users', schema=None) as batch_op:
-        batch_op.drop_constraint('users_email_key', type_='unique')
+    # with op.batch_alter_table('users', schema=None) as batch_op:
+    #     batch_op.drop_constraint('users_email_key', type_='unique')
 
     # ### end Alembic commands ###
 
