@@ -22,7 +22,7 @@ def upgrade():
         # batch_op.add_column(sa.Column('user_id', sa.Integer(), nullable=False))
         # batch_op.drop_constraint('branch_ratings_tourist_id_fkey', type_='foreignkey')
         batch_op.create_foreign_key(None, 'tourists', ['user_id'], ['user_id'])
-        batch_op.drop_column('tourist_id')
+        # batch_op.drop_column('tourist_id')
 
     # ### end Alembic commands ###
 
