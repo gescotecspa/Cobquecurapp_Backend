@@ -9,7 +9,7 @@ class TouristPoint(db.Model):
     latitude = db.Column(db.Float, nullable=False)
     longitude = db.Column(db.Float, nullable=False)
     images = db.relationship('Image', backref='tourist_point', lazy=True)
-    ratings = db.relationship('Rating', backref='tourist_point', lazy=True)
+    ratings = db.relationship('Rating', backref='tourist_point_ratings', lazy=True)
 
     status_id = db.Column(db.Integer, db.ForeignKey('statuses.id'), nullable=False)
     status = db.relationship('Status', backref='tourist_points')
@@ -54,17 +54,22 @@ class Rating(db.Model):
     
     # Relación con User (tabla 'users')
     tourist = db.relationship('User', backref='ratings')
+    tourist_point = db.relationship('TouristPoint', backref='tourist_point_ratings', lazy=True)
+    status_id = db.Column(db.Integer, db.ForeignKey('statuses.id'), nullable=False)
+    status = db.relationship('Status', backref='ratings')
     
     def serialize(self):
         return {
             'id': self.id,
             'tourist_point_id': self.tourist_point_id,
+            'tourist_point_title': self.tourist_point.title if self.tourist_point else None,
             'tourist_id': self.tourist_id,
             'tourist_first_name': self.tourist.first_name if self.tourist else None, 
             'tourist_image_url': self.tourist.image_url if self.tourist else None, 
             'rating': self.rating,
             'comment': self.comment,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'status': self.status.serialize() if self.status else None,
         }
 
     __table_args__ = (

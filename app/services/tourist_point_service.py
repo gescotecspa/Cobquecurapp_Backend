@@ -2,6 +2,7 @@ from app.models import TouristPoint, Image, Rating, Status
 from app import db
 from ..common.image_manager import ImageManager
 from config import Config
+from datetime import datetime, timedelta
 
 
 class TouristPointService:
@@ -91,6 +92,7 @@ class TouristPointService:
         return image.serialize()  # Devuelve el resultado serializado
 
     def add_rating(tourist_point_id, tourist_id, rating, comment=None):
+        pending_status = Status.query.filter_by(name="pending").first()
         # Verificar si el turista ya ha calificado este punto turístico
         existing_rating = Rating.query.filter_by(
             tourist_point_id=tourist_point_id,
@@ -105,7 +107,8 @@ class TouristPointService:
             tourist_point_id=tourist_point_id,
             tourist_id=tourist_id,
             rating=rating,
-            comment=comment
+            comment=comment,
+            status_id=pending_status.id if pending_status else None,
         )
         db.session.add(new_rating)
         db.session.commit()
@@ -116,8 +119,15 @@ class TouristPointService:
         rating = Rating.query.get(rating_id)
         if not rating:
             return None
-        db.session.delete(rating)
+
+        deleted_status = Status.query.filter_by(name="deleted").first()
+        if not deleted_status:
+            return {'error': 'Deleted status not found'}, 500
+
+        rating.status_id = deleted_status.id
+        rating.deleted_at = db.func.current_timestamp() 
         db.session.commit()
+
         return True
 
     def update_rating(rating_id, data):
@@ -125,27 +135,55 @@ class TouristPointService:
         if not rating:
             return None
 
-        rating.rating = data.get('rating', rating.rating)
-        rating.comment = data.get('comment', rating.comment)
+        if 'rating' in data:
+            rating.rating = data['rating']
+        if 'comment' in data:
+            rating.comment = data['comment']
+        if 'status_id' in data:
+            rating.status_id = data['status_id']
+
         db.session.commit()
         return rating.serialize()
 
     def get_average_rating(tourist_point_id):
-        ratings = Rating.query.filter_by(tourist_point_id=tourist_point_id).all()
+        deleted_status = Status.query.filter_by(name="deleted").first()
+        rejected_status = Status.query.filter_by(name="rejected").first()
+
+        if not deleted_status or not rejected_status:
+            return {'error': 'Deleted or Rejected status not found in database'}, 500
+        
+        ratings = Rating.query.filter(
+            Rating.tourist_point_id == tourist_point_id,
+            (Rating.status_id != deleted_status.id) & 
+            (Rating.status_id != rejected_status.id) | 
+            (Rating.status_id == None)
+        ).all()
         if not ratings:
-            return {'average_rating': 'No ratings yet'}
+            return 0
         avg_rating = sum(r.rating for r in ratings) / len(ratings)
         return {'average_rating': avg_rating}
 
     def get_ratings_by_tourist_point(tourist_point_id):
-        return Rating.query.filter_by(tourist_point_id=tourist_point_id).all()
+        deleted_status = Status.query.filter_by(name="deleted").first()
+        rejected_status = Status.query.filter_by(name="rejected").first()
+
+        if not deleted_status or not rejected_status:
+            return {'error': 'Deleted or Rejected status not found in database'}, 500
+
+        ratings = Rating.query.filter(
+            Rating.tourist_point_id == tourist_point_id,
+            (Rating.status_id != deleted_status.id) & 
+            (Rating.status_id != rejected_status.id) | 
+            (Rating.status_id == None)
+        ).all()
+        return ratings
 
     def delete_tourist_point_images(image_ids):
     # Obtiene las imágenes de los puntos turísticos por su ID
-        images = Image.query.filter(Image.id.in_(image_ids)).all()  # Cambié TouristPointImage a Image
+        images = Image.query.filter(Image.id.in_(image_ids)).all()
         
         if images:
-            image_manager = ImageManager()  # Instancia de ImageManager
+            image_manager = ImageManager()
             for image in images:
                 try:
                     filename = image.image_path  # Obtiene la ruta completa de la imagen
@@ -224,3 +262,53 @@ class TouristPointService:
                 .all()
             )
         return [tp.serialize() for tp in tourist_points]
+    
+    @staticmethod
+    def get_comments_last_4_weeks():
+        """
+        Obtiene los comentarios de los puntos turísticos de la última semana, incluyendo aquellos con estado 'deleted'.
+        """
+        one_week_ago = datetime.now() - timedelta(weeks=4)
+        
+        deleted_status = Status.query.filter_by(name="deleted").first()
+        if not deleted_status:
+            return {'error': 'Deleted status not found in database'}, 500
+        
+        comments = Rating.query.filter(
+            Rating.created_at >= one_week_ago,
+            (Rating.status_id != deleted_status.id) | (Rating.status_id == None)
+        ).all()
+        
+        return [comment.serialize() for comment in comments]
+    
+    @staticmethod
+    def approve_rating(rating_id):
+        approved_status = Status.query.filter_by(name="approved").first()
+        if not approved_status:
+            return None, "Approved status not found"
+
+        rating = Rating.query.get(rating_id)
+        if not rating:
+            return None, "Rating not found"
+
+        rating.status_id = approved_status.id
+        db.session.commit()
+        return rating, None
+    
+    @staticmethod
+    def reject_rating(rating_id):
+        try:
+            rejected_status = Status.query.filter_by(name="rejected").first()
+            if not rejected_status:
+                raise ValueError("Approved status not found")
+
+            rating = Rating.query.get(rating_id)
+            if not rating:
+                raise ValueError("Rating not found")
+
+            rating.status_id = rejected_status.id
+            db.session.commit()
+            return rating
+        except Exception as e:
+            db.session.rollback()
+            raise e
