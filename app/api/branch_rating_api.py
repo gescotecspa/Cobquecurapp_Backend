@@ -67,8 +67,13 @@ class BranchRatingRejectResource(Resource):
 class BranchRatingsListResource(Resource):
     def get(self, branch_id):
         ratings_with_names = BranchRatingService.get_all_ratings_for_branch(branch_id)
+        print(ratings_with_names)
         if not ratings_with_names:
-            return {'message': 'No ratings found for this branch'}, 404
+            response = {
+            'ratings': ratings_with_names,
+            'average_rating': 0
+        }
+            return response, 200
 
         avg_rating = BranchRatingService.get_average_rating_for_branch(branch_id)
         
@@ -77,6 +82,25 @@ class BranchRatingsListResource(Resource):
             'average_rating': avg_rating
         }
         return response, 200
+
+class BranchRatingsListAdminResource(Resource):
+    def get(self, branch_id):
+        ratings_with_names = BranchRatingService.get_all_ratings_for_branch_include_rejected(branch_id)
+        print(ratings_with_names)
+        if not ratings_with_names:
+            response = {
+            'ratings': ratings_with_names,
+            'average_rating': 0
+        }
+            return response, 200
+
+        avg_rating = BranchRatingService.get_average_rating_for_branch(branch_id)
+        response = {
+            'ratings': [rating.serialize(first_name) for rating, first_name in ratings_with_names],
+            'average_rating': avg_rating
+        }
+        return response, 200
+    
 
 class BranchAverageRatingResource(Resource):
     def get(self, branch_id):
@@ -97,6 +121,7 @@ class BranchRatingsLast4WeeksResource(Resource):
 api.add_resource(BranchRatingResource, '/branches/<int:branch_id>/ratings')
 api.add_resource(BranchRatingUpdateResource, '/branches/ratings/<int:rating_id>')
 api.add_resource(BranchRatingsListResource, '/branches/<int:branch_id>/ratings/all')
+api.add_resource(BranchRatingsListAdminResource, '/branches/admin/<int:branch_id>/ratings/all')
 api.add_resource(BranchAverageRatingResource, '/branches/<int:branch_id>/average_rating')
 api.add_resource(BranchRatingSoftDeleteResource, '/branches/ratings/soft_delete/<int:rating_id>')
 api.add_resource(BranchRatingApproveResource, '/branches/ratings/approve/<int:rating_id>')

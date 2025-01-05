@@ -80,7 +80,11 @@ class RatingVersionedResource(Resource):
         if version == 'v2':
             ratings = TouristPointService.get_ratings_by_tourist_point(id)
             if not ratings:
-                return {'message': 'No ratings found for this tourist point.'}, 404
+                response = {
+                            'ratings': [],
+                            'average_rating': 0
+                            }
+                return response, 200
             
             average_rating = TouristPointService.get_average_rating(id)
             

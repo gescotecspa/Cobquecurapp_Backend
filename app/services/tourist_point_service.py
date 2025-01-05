@@ -170,13 +170,13 @@ class TouristPointService:
         if not deleted_status or not rejected_status:
             return {'error': 'Deleted or Rejected status not found in database'}, 500
 
-        # Filtrar las valoraciones que no están "deleted"
-        return Rating.query.filter(
+        ratings = Rating.query.filter(
             Rating.tourist_point_id == tourist_point_id,
             (Rating.status_id != deleted_status.id) & 
             (Rating.status_id != rejected_status.id) | 
             (Rating.status_id == None)
         ).all()
+        return ratings
 
     def delete_tourist_point_images(image_ids):
     # Obtiene las imágenes de los puntos turísticos por su ID
