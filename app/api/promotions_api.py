@@ -24,15 +24,15 @@ class PromotionResource(Resource):
             return {'message': 'Promotion deleted'}, 200
         return {'message': 'Promotion not found'}, 404
 
-class PromotionListResource(Resource):
-    def get(self):
-        promotions = PromotionService.get_all_promotions()
-        return jsonify([promotion.serialize() for promotion in promotions])
+# class PromotionListResource(Resource):
+#     def get(self):
+#         promotions = PromotionService.get_all_promotions()
+#         return jsonify([promotion.serialize() for promotion in promotions])
 
-    def post(self):
-        data = request.get_json()
-        promotion = PromotionService.create_promotion(**data)
-        return jsonify(promotion.serialize())
+#     def post(self):
+#         data = request.get_json()
+#         promotion = PromotionService.create_promotion(**data)
+#         return jsonify(promotion.serialize())
     
 class PromotionImageResource(Resource):
     def post(self):
@@ -90,6 +90,6 @@ api.add_resource(PromotionResource, '/promotions/<int:promotion_id>')
 api.add_resource(PromotionImageResource, '/promotion_images/delete')
 api.add_resource(PromotionByPartnerResource, '/partners/<int:partner_id>/promotions')
 api.add_resource(PromotionBulkDeleteResource, '/promotions/bulk_delete')
-api.add_resource(PromotionListResource, '/promotions') # Ruta para promociones activas (version inicial)
+# api.add_resource(PromotionListResource, '/promotions') # Ruta para promociones (version inicial)
 api.add_resource(ActivePromotionsResource, '/<string:version>/promotions/active')  # Ruta para promociones activas (turistas)
 api.add_resource(AllPromotionsResourceVersioned, '/<string:version>/promotions')  # Ruta versionada para todas las promociones sin branch details

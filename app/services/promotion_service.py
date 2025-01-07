@@ -6,6 +6,7 @@ from app.models import Promotion, Branch, Status
 from config import Config
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import joinedload
+from time import sleep
 
 class PromotionService:
     @staticmethod
