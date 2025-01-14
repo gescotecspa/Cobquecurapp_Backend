@@ -98,10 +98,10 @@ class AppVersionService:
         print(f"Platform: {platform}, App Type: {app_type}")
         try:
             # Traemos la versión activa y obligatoria más reciente según la fecha de creación del registro
-            version = AppVersion.query.filter_by(platform=platform,app_type=app_type, is_active=True, is_required=True) \
+            version = AppVersion.query.filter_by(platform=platform,app_type=app_type, is_active=True) \
                 .order_by(AppVersion.created_at.desc()).first()
             if version:
-                return version.serialize()  # Serializamos antes de retornar
+                return version.serialize()
             return None
         except SQLAlchemyError as e:
             db.session.rollback()
