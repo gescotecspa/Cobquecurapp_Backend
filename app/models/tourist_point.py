@@ -55,7 +55,7 @@ class Rating(db.Model):
     # Relación con User (tabla 'users')
     tourist = db.relationship('User', backref='ratings')
     tourist_point = db.relationship('TouristPoint', backref='tourist_point_ratings', lazy=True)
-    status_id = db.Column(db.Integer, db.ForeignKey('statuses.id'), nullable=False)
+    status_id = db.Column(db.Integer, db.ForeignKey('statuses.id'), nullable=True)
     status = db.relationship('Status', backref='ratings')
     
     def serialize(self):
