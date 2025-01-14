@@ -8,33 +8,45 @@ class AppVersionService:
     def get_version_by_id(version_id):
         try:
             version = AppVersion.query.get(version_id)
-            return version
+            if version:
+                return version.serialize()  # Serializamos la versión
+            return None
         except SQLAlchemyError as e:
             db.session.rollback()
             print(f"Error al obtener la versión: {e}")
             return None
 
     @staticmethod
-    def update_version(version_id, version_number, platform, release_date, download_url, notes, is_active, is_required):
+    def update_version(version_id, version_number=None, platform=None, release_date=None, download_url=None, notes=None, is_active=None, is_required=None, app_type=None):
         try:
             version = AppVersion.query.get(version_id)
             if not version:
                 return None
 
-            version.version_number = version_number
-            version.platform = platform
-            version.release_date = release_date
-            version.download_url = download_url
-            version.notes = notes
-            version.is_active = is_active
-            version.is_required = is_required
+            if version_number is not None:
+                version.version_number = version_number
+            if platform is not None:
+                version.platform = platform
+            if release_date is not None:
+                version.release_date = release_date
+            if download_url is not None:
+                version.download_url = download_url
+            if notes is not None:
+                version.notes = notes
+            if is_active is not None:
+                version.is_active = is_active
+            if is_required is not None:
+                version.is_required = is_required
+            if app_type is not None:
+                version.app_type = app_type
 
             db.session.commit()
-            return version
+            return version.serialize()  # Serializamos antes de retornar
         except SQLAlchemyError as e:
             db.session.rollback()
             print(f"Error al actualizar la versión: {e}")
             return None
+
 
     @staticmethod
     def delete_version(version_id):
@@ -53,15 +65,15 @@ class AppVersionService:
     @staticmethod
     def get_all_versions():
         try:
-            versions = AppVersion.query.all()
-            return versions
+            versions = AppVersion.query.filter_by(is_active=True).all()
+            return [version.serialize() for version in versions]
         except SQLAlchemyError as e:
             db.session.rollback()
             print(f"Error al obtener todas las versiones: {e}")
             return []
 
     @staticmethod
-    def create_version(version_number, platform, release_date, download_url, notes, is_active, is_required):
+    def create_version(version_number, platform, release_date, download_url, notes, is_active, is_required, app_type):
         try:
             version = AppVersion(
                 version_number=version_number,
@@ -70,25 +82,28 @@ class AppVersionService:
                 download_url=download_url,
                 notes=notes,
                 is_active=is_active,
-                is_required=is_required
+                is_required=is_required,
+                app_type=app_type
             )
             db.session.add(version)
             db.session.commit()
-            return version
+            return version.serialize()  # Serializamos antes de retornar
         except SQLAlchemyError as e:
             db.session.rollback()
             print(f"Error al crear la versión: {e}")
             return None
 
     @staticmethod
-    def get_active_version(platform):
+    def get_active_version(platform, app_type):
+        print(f"Platform: {platform}, App Type: {app_type}")
         try:
             # Traemos la versión activa y obligatoria más reciente según la fecha de creación del registro
-            version = AppVersion.query.filter_by(platform=platform, is_active=True, is_required=True) \
+            version = AppVersion.query.filter_by(platform=platform,app_type=app_type, is_active=True, is_required=True) \
                 .order_by(AppVersion.created_at.desc()).first()
-            return version
+            if version:
+                return version.serialize()  # Serializamos antes de retornar
+            return None
         except SQLAlchemyError as e:
             db.session.rollback()
             print(f"Error al obtener la versión activa para {platform}: {e}")
             return None
-
