@@ -7,6 +7,7 @@ class AppVersion(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     version_number = db.Column(db.String(20), nullable=False)
+    app_type = db.Column(db.String(50), nullable=False)
     platform = db.Column(db.String(50), nullable=False) 
     release_date = db.Column(db.Date, nullable=False, default=datetime.now(timezone.utc).date) 
     #Representa la fecha oficial en la que la versión de la aplicación fue prevista a lanzar o lanzada para los usuarios.
@@ -23,11 +24,18 @@ class AppVersion(db.Model):
             raise ValueError(f"Platform must be one of {allowed_platforms}")
         return value
 
+    @validates('app_type')
+    def validate_app_type(self, key, value):
+        allowed_app_types = ['tourist', 'associated']
+        if value not in allowed_app_types:
+            raise ValueError(f"App type must be one of {allowed_app_types}")
+        return value
     # Método para serializar el modelo
     def serialize(self):
         return {
             "id": self.id,
             "version_number": self.version_number,
+            "app_type": self.app_type,
             "platform": self.platform,
             "release_date": self.release_date.isoformat() if self.release_date else None,
             "download_url": self.download_url,
