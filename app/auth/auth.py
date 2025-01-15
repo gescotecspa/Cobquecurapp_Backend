@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify, make_response, current_app, render_template
+from flask_restful import abort
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import jwt
@@ -13,23 +14,48 @@ from ..common.email_utils import send_email
 
 auth_blueprint = Blueprint('auth', __name__)
 
+from functools import wraps
+import jwt
+from flask import request, current_app
+
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        print("Iniciando verificación de token...")
+
         token = None
         if 'Authorization' in request.headers:
-            print(request.headers['Authorization'].split())
-            token = request.headers['Authorization'].split()[1]
+            parts = request.headers['Authorization'].split()
+            if len(parts) == 2 and parts[0].lower() == 'bearer':
+                token = parts[1]
+
         if not token:
-            return jsonify({'message': 'Token is missing!'}), 401
+            print("Token no encontrado, abortando con 401")
+            abort(401, message="Token is missing!")  # Se corta aquí
+
         try:
             data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
-            print(data)
             current_user = User.query.filter_by(email=data['email']).first()
-        except:
-            return jsonify({'message': 'Token is invalid!'}), 401
-        return f(current_user, *args, **kwargs)
+            if not current_user:
+                print("Usuario no encontrado, abortando con 404")
+                abort(404, message="User not found!")
+        except jwt.ExpiredSignatureError:
+            abort(401, message="Token has expired!")
+        except jwt.InvalidTokenError as e:
+            abort(401, message=f"Token is invalid: {str(e)}")
+        except Exception as e:
+            abort(500, message=f"Error al validar el token: {str(e)}")
+
+        print("Token válido. Llamando a la función decorada.")
+        # Aquí sí podemos imprimir la respuesta exitosa
+        result = f(current_user, *args, **kwargs)
+        
+        return result
+
     return decorated
+
+
+
 
 @auth_blueprint.route('/login', methods=['POST'])
 def login():
@@ -38,7 +64,7 @@ def login():
     # Verificar si se envían los datos requeridos
     if not data or not data.get('email') or not data.get('password'):
         return jsonify({'message': 'Debe ingresar email y contraseña'}), 400
-    print(data['email'],data['password'])
+    print(data['email'], data['password'])
     # Obtener el usuario por email
     user = UserService.get_user_by_email(data['email'])
     print(user)
@@ -48,39 +74,39 @@ def login():
 
     # Verificar la contraseña
     if check_password_hash(user.password, data['password']):
-        # Generar el token JWT
-        token = jwt.encode(
-            {'email': user.email, 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)},
-            current_app.config['SECRET_KEY']
-        )
-        # Devolver el token y los datos del usuario
-        return jsonify({'token': token, 'user': user.serialize()}), 200
+        try:
+            # Generar el token JWT
+            token = jwt.encode(
+                {
+                    'email': user.email,
+                    'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+                },
+                current_app.config['SECRET_KEY'],
+                algorithm="HS256"
+            )
+            # Convertir token a cadena si es necesario
+            if isinstance(token, bytes):
+                token = token.decode('utf-8')
 
-    # Si la contraseña es incorrecta
+            # Devolver el token y los datos del usuario
+            return jsonify({'token': token, 'user': user.serialize()}), 200
+        except Exception as e:
+            return jsonify({'message': f'Error al generar el token: {str(e)}'}), 500
+
     return jsonify({'message': 'Contraseña inválida'}), 401
 
 @auth_blueprint.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json()
-    
-    # Extraer datos de la imagen si existen
-    image_data = data.pop('image_data', None)
-    
-    try:
-        user = UserService.create_user(**data, image_data=image_data)
-        return jsonify(user.serialize()), 201
-    except ValueError as e:
-        return {'message': str(e)}, 400
 
-@auth_blueprint.route('/signup-partner', methods=['POST'])
-def signup_partner():
-    data = request.get_json()
-    
     # Extraer datos de la imagen si existen
     image_data = data.pop('image_data', None)
-    
+
     try:
-        user = UserService.create_user_partner(**data)
+        if not data.get('accept_terms'):
+            return jsonify({'message': 'Debe aceptar los términos y condiciones'}), 400
+
+        user = UserService.create_user(**data, image_data=image_data)
         return jsonify(user.serialize()), 201
     except ValueError as e:
         return {'message': str(e)}, 400
@@ -94,17 +120,16 @@ def get_user(current_user):
 @token_required
 def update_user(current_user, user_id):
     data = request.get_json()
-    
+
     # Extraer datos de la imagen si existen
     image_data = data.pop('image_data', None)
-    
+
     user = UserService.update_user(user_id, **data, image_data=image_data)
     if user:
         return jsonify(user.serialize())
     return {'message': 'User not found'}, 404
 
-# Reestablecer contraseña
-
+# Restablecer contraseña
 def generate_reset_code(length=8):
     letters_and_digits = string.ascii_letters + string.digits
     return ''.join(random.choice(letters_and_digits) for i in range(length))
@@ -115,7 +140,6 @@ def reset_password_request():
     email = data.get('email')
 
     user = UserService.get_user_by_email(email)
-    # print("usuario",user)
     if not user:
         return jsonify({'message': 'User not found'}), 404
 
@@ -124,9 +148,7 @@ def reset_password_request():
     user.reset_code_expiration = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
     db.session.commit()
 
-    # URL donde se restablecerá la contraseña app-cobquecura.vercel.app
-    reset_url = "https://www.cobquecurapp.cl/reset_password"
-
+    reset_url = "https://seal-app-dx4lr.ondigitalocean.app/reset_password"
     subject = "Password Reset Requested"
     recipients = [email]
     html_body = render_template('email/reset_password.html', reset_code=reset_code, reset_url=reset_url)
@@ -187,7 +209,8 @@ def create_bulk_users(current_user):
     return jsonify({'created_users': created_users}), 201
 
 @auth_blueprint.route('/signup-partners/bulk', methods=['POST'])
-def signup_partners():
+@token_required
+def signup_partners(current_user):
     data = request.get_json()
 
     if not isinstance(data, list):

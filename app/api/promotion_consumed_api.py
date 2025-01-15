@@ -14,6 +14,7 @@ class PromotionConsumedResource(Resource):
             return jsonify(promotion_consumed.serialize())
         return {'message': 'PromotionConsumed not found'}, 404
 
+    @token_required
     def put(self, current_user, id):
         data = request.get_json()
         try:
@@ -34,6 +35,7 @@ class PromotionConsumedResource(Resource):
             response.status_code = 500
             return response
 
+    @token_required
     def delete(self, current_user, id):
         if PromotionConsumedService.delete_promotion_consumed(id):
             return {'message': 'PromotionConsumed deleted'}, 200
@@ -45,6 +47,7 @@ class PromotionConsumedListResource(Resource):
         promotion_consumeds = PromotionConsumedService.get_all_promotion_consumeds()
         return jsonify([pc.serialize() for pc in promotion_consumeds])
 
+    @token_required 
     def post(self, current_user):
         data = request.get_json()
         try:

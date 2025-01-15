@@ -35,7 +35,7 @@ class PromotionListResource(Resource):
         return jsonify([promotion.serialize() for promotion in promotions])
 
     @token_required
-    def post(self):
+    def post(self, current_user):
         data = request.get_json()
         promotion = PromotionService.create_promotion(**data)
         return jsonify(promotion.serialize())
