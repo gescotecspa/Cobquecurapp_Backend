@@ -9,32 +9,14 @@ class PartnerService:
 
     @staticmethod
     def create_partner(user_id, address, contact_info, business_type, category_ids=[]):
-        # Verificar si ya existe un partner con ese user_id
-        with db.session.no_autoflush:  # Evita flush prematuro
-            existing_partner = Partner.query.filter_by(user_id=user_id).first()
-            if existing_partner:
-                raise ValueError(f"Partner with user_id {user_id} already exists")
-
-        # Crear un nuevo partner si no existe
-        try:
-            new_partner = Partner(
-                user_id=user_id,
-                address=address,
-                contact_info=contact_info,
-                business_type=business_type
-            )
-            db.session.add(new_partner)
-
-            for category_id in category_ids:
-                category = Category.query.get(category_id)
-                if category:
-                    new_partner.categories.append(category)
-
-            db.session.commit()
-            return new_partner
-        except IntegrityError:
-            db.session.rollback()
-            raise ValueError(f"Failed to create Partner. Partner with user_id {user_id} already exists.")
+        new_partner = Partner(user_id=user_id, address=address, contact_info=contact_info, business_type=business_type)
+        db.session.add(new_partner)
+        for category_id in category_ids:
+            category = Category.query.get(category_id)
+            if category:
+                new_partner.categories.append(category)
+        db.session.commit()
+        return new_partner
 
     @staticmethod
     def update_partner(user_id, address=None, contact_info=None, business_type=None, category_ids=None):

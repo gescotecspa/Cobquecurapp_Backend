@@ -8,27 +8,12 @@ api = Api(favorite_api_blueprint)
 
 class FavoriteResource(Resource):
     @token_required
-    def post(self, current_user):
-        from app.models.tourist import Tourist  # Importar el modelo de turista
-        try:
-            data = request.get_json()
-
-            # Validar campos requeridos
-            if 'user_id' not in data or 'promotion_id' not in data:
-                return {'message': 'Missing required fields: user_id or promotion_id'}, 400
-
-            # Llamar al servicio para agregar favorito
-            favorite = FavoriteService.add_favorite(data['user_id'], data['promotion_id'])
-            if favorite is None:
-                return {'message': 'Favorite already exists'}, 400
-
-            return favorite.serialize(), 201
-
-        except ValueError as e:
-            return {'message': str(e)}, 404
-        except Exception as e:
-            print(f"Error interno: {str(e)}")  # Depuración
-            return {'message': 'Internal server error'}, 500
+    def post(self):
+        data = request.get_json()
+        favorite = FavoriteService.add_favorite(data['user_id'], data['promotion_id'])
+        if favorite is None:
+            return jsonify({'message': 'Favorite already exists'})
+        return jsonify(favorite.serialize())
 
 
     @token_required

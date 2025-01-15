@@ -35,26 +35,10 @@ class PromotionListResource(Resource):
         return jsonify([promotion.serialize() for promotion in promotions])
 
     @token_required
-    def post(self, current_user):
-        try:
-            data = request.get_json()
-
-            # Validar campos requeridos
-            required_fields = ['branch_id', 'title', 'start_date', 'expiration_date', 
-                               'discount_percentage', 'available_quantity', 'partner_id', 'category_ids']
-            missing_fields = [field for field in required_fields if field not in data]
-            if missing_fields:
-                return {'message': f'Missing required fields: {", ".join(missing_fields)}'}, 400
-
-            # Crear promoción
-            promotion = PromotionService.create_promotion(**data)
-            return promotion.serialize(), 201
-
-        except ValueError as e:
-            return {'message': str(e)}, 400
-        except Exception as e:
-            print(f"Error interno: {str(e)}")  # Depuración
-            return {'message': 'Internal server error'}, 500
+    def post(self):
+        data = request.get_json()
+        promotion = PromotionService.create_promotion(**data)
+        return jsonify(promotion.serialize())
 
 class PromotionImageResource(Resource):
     @token_required

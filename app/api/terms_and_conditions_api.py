@@ -37,21 +37,17 @@ class TermsAndConditionsListResource(Resource):
         return {'message': 'No terms and conditions found'}, 404
 
     @token_required
-    def post(self, current_user):
+    def post(self):
         data = request.get_json()
-        try:
-            terms = TermsAndConditionsService.create_terms(data['content'], data['version'])
-            print(f"Términos y condiciones creados: {terms.serialize()}")  # Print para depuración
-            return terms.serialize(), 201
-        except ValueError as e:
-            return {'message': str(e)}, 400
+        terms = TermsAndConditionsService.create_terms(data['content'], data['version'])
+        return jsonify(terms.serialize())
 
 class AcceptTermsResource(Resource):
     @token_required
     def put(self, current_user, user_id):
         try:
             user = TermsAndConditionsService.accept_terms(user_id)
-            return user.serialize(), 200
+            return jsonify(user.serialize())
         except ValueError as e:
             return {'message': str(e)}, 400
 

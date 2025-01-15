@@ -19,30 +19,20 @@ class TermsAndConditionsService:
 
     @staticmethod
     def create_terms(content, version):
-        # Verificar si la versión ya existe
-        existing_terms = TermsAndConditions.query.filter_by(version=version).first()
-        if existing_terms:
-            # Si existe, actualizar el contenido
-            existing_terms.content = content
-            existing_terms.created_at = datetime.utcnow()  # Actualiza la fecha de creación
-            db.session.commit()
-            return existing_terms
-
-        # Crear nuevos términos si la versión no existe
         new_terms = TermsAndConditions(content=content, version=version)
         db.session.add(new_terms)
         db.session.commit()
         return new_terms
 
-        @staticmethod
-        def update_terms(terms_id, content, version):
-            terms = TermsAndConditions.query.get(terms_id)
-            if terms:
-                terms.content = content
-                terms.version = version
-                db.session.commit()
-                return terms
-            return None
+    @staticmethod
+    def update_terms(terms_id, content, version):
+        terms = TermsAndConditions.query.get(terms_id)
+        if terms:
+            terms.content = content
+            terms.version = version
+            db.session.commit()
+            return terms
+        return None
 
     @staticmethod
     def delete_terms(terms_id):
