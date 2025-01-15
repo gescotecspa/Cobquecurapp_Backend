@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_restful import Api, Resource
 from app.services.StatusService import StatusService
+from app.auth.auth import token_required
 
 status_api_blueprint = Blueprint('status_api', __name__)
 api = Api(status_api_blueprint)
@@ -25,7 +26,8 @@ class StatusResource(Resource):
         return {'message': 'Status not found'}, 404
 
 class StatusListResource(Resource):
-    def get(self):
+    @token_required
+    def get(self, current_user):
         statuses = StatusService.get_all_statuses()
         return jsonify([status.serialize() for status in statuses])
 

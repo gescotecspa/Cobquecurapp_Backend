@@ -1,41 +1,64 @@
 from flask import Blueprint, request, jsonify
 from flask_restful import Api, Resource
 from app.services.promotion_service import PromotionService
+from app.auth.auth import token_required
 
 promotion_api_blueprint = Blueprint('promotion_api', __name__)
 api = Api(promotion_api_blueprint)
 
 class PromotionResource(Resource):
-    def get(self, promotion_id):
+    @token_required
+    def get(self, current_user, promotion_id):
         promotion = PromotionService.get_promotion_by_id(promotion_id)
         if promotion:
             return jsonify(promotion.serialize())
         return {'message': 'Promotion not found'}, 404
 
-    def put(self, promotion_id):
+    @token_required
+    def put(self, current_user, promotion_id):
         data = request.get_json()
         promotion = PromotionService.update_promotion(promotion_id, **data)
         if promotion:
             return jsonify(promotion.serialize())
         return {'message': 'Promotion not found'}, 404
 
-    def delete(self, promotion_id):
+    @token_required
+    def delete(self, current_user, promotion_id):
         if PromotionService.delete_promotion(promotion_id):
             return {'message': 'Promotion deleted'}, 200
         return {'message': 'Promotion not found'}, 404
 
 class PromotionListResource(Resource):
-    def get(self):
+    @token_required
+    def get(self, current_user):
         promotions = PromotionService.get_all_promotions()
         return jsonify([promotion.serialize() for promotion in promotions])
 
-    def post(self):
-        data = request.get_json()
-        promotion = PromotionService.create_promotion(**data)
-        return jsonify(promotion.serialize())
-    
+    @token_required
+    def post(self, current_user):
+        try:
+            data = request.get_json()
+
+            # Validar campos requeridos
+            required_fields = ['branch_id', 'title', 'start_date', 'expiration_date', 
+                               'discount_percentage', 'available_quantity', 'partner_id', 'category_ids']
+            missing_fields = [field for field in required_fields if field not in data]
+            if missing_fields:
+                return {'message': f'Missing required fields: {", ".join(missing_fields)}'}, 400
+
+            # Crear promoción
+            promotion = PromotionService.create_promotion(**data)
+            return promotion.serialize(), 201
+
+        except ValueError as e:
+            return {'message': str(e)}, 400
+        except Exception as e:
+            print(f"Error interno: {str(e)}")  # Depuración
+            return {'message': 'Internal server error'}, 500
+
 class PromotionImageResource(Resource):
-    def post(self):
+    @token_required
+    def post(self, current_user):
         data = request.get_json()
         image_ids = data.get('image_ids', [])
         print(image_ids)
@@ -44,15 +67,16 @@ class PromotionImageResource(Resource):
         return {'message': 'Images not found'}, 404    
 
 class PromotionByPartnerResource(Resource):
-    def get(self, partner_id):
+    @token_required
+    def get(self, current_user, partner_id):
         promotions = PromotionService.get_promotions_by_partner(partner_id)
         if promotions:
             return jsonify([promotion.serialize(include_user_info=False) for promotion in promotions])
-        print(promotions)
-        return promotions, 200
+        return {'message': 'No promotions found for this partner.'}, 404
 
 class PromotionBulkDeleteResource(Resource):
-    def put(self):
+    @token_required
+    def put(self, current_user):
         data = request.get_json()
         promotion_ids = data.get('promotion_ids', [])
         status_id = data.get('status_id')  # Suponiendo que 'status_id' es el valor que indica que la promoción fue eliminada
@@ -67,9 +91,10 @@ class PromotionBulkDeleteResource(Resource):
         if updated_promotions:
             return {'message': 'Promotions updated successfully'}, 200
         return {'message': 'Failed to update promotions'}, 500
-    
+
 class ActivePromotionsResource(Resource):
-    def get(self, version=None):
+    @token_required
+    def get(self, current_user, version=None):
         if version == 'v2':
             # Mantener el servicio original, solo ajustando el uso para la versión 2
             promotions = PromotionService.get_active_promotions()
@@ -79,7 +104,8 @@ class ActivePromotionsResource(Resource):
 
 # Nuevo: Versión 2 para promociones activas
 class AllPromotionsResourceVersioned(Resource):
-    def get(self, version):
+    @token_required
+    def get(self, current_user, version):
         if version == 'v2':
             promotions = PromotionService.get_all_promotions()
             return jsonify([promotion.serialize(include_user_info=False, include_branch_name=True) for promotion in promotions])

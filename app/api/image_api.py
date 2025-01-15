@@ -1,13 +1,15 @@
 from flask import Blueprint, Response, jsonify, current_app
 from flask_restful import Api, Resource
 import os
+from app.auth.auth import token_required
 
 # Crear blueprint y API
 image_api_blueprint = Blueprint('image_api', __name__)
 api = Api(image_api_blueprint)
 
 class ImageResource(Resource):
-    def get(self, filename):
+    @token_required
+    def get(self, filename, current_user):
         # Definir la ruta completa
         file_path = os.path.join('upload_image', filename)
         print(f"Ruta completa: {file_path}")

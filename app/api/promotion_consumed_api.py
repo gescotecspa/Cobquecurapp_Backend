@@ -1,18 +1,20 @@
 from flask import Blueprint, request, jsonify
 from flask_restful import Api, Resource
 from app.services.promotion_consumed_service import PromotionConsumedService
+from app.auth.auth import token_required
 
 promotion_consumed_api_blueprint = Blueprint('promotion_consumed_api', __name__)
 api = Api(promotion_consumed_api_blueprint)
 
 class PromotionConsumedResource(Resource):
-    def get(self, id):
+    @token_required
+    def get(self, current_user, id):
         promotion_consumed = PromotionConsumedService.get_promotion_consumed_by_id(id)
         if promotion_consumed:
             return jsonify(promotion_consumed.serialize())
         return {'message': 'PromotionConsumed not found'}, 404
 
-    def put(self, id):
+    def put(self, current_user, id):
         data = request.get_json()
         try:
             # Intentar actualizar la promoción consumida
@@ -32,17 +34,18 @@ class PromotionConsumedResource(Resource):
             response.status_code = 500
             return response
 
-    def delete(self, id):
+    def delete(self, current_user, id):
         if PromotionConsumedService.delete_promotion_consumed(id):
             return {'message': 'PromotionConsumed deleted'}, 200
         return {'message': 'PromotionConsumed not found'}, 404
 
 class PromotionConsumedListResource(Resource):
-    def get(self):
+    @token_required
+    def get(self, current_user):
         promotion_consumeds = PromotionConsumedService.get_all_promotion_consumeds()
         return jsonify([pc.serialize() for pc in promotion_consumeds])
 
-    def post(self):
+    def post(self, current_user):
         data = request.get_json()
         try:
             promotion_consumed = PromotionConsumedService.create_promotion_consumed(data)
@@ -59,7 +62,8 @@ class PromotionConsumedListResource(Resource):
             return response
         
 class PromotionConsumedByPartnerResource(Resource):
-    def get(self, partner_id):
+    @token_required
+    def get(self, current_user, partner_id):
         # Obtén las promociones consumidas filtradas por partner_id
         promotions_consumed = PromotionConsumedService.get_promotion_consumeds_by_partner(partner_id)
 
