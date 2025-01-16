@@ -8,7 +8,7 @@ api = Api(favorite_api_blueprint)
 
 class FavoriteResource(Resource):
     @token_required
-    def post(self):
+    def post(self, current_user):
         data = request.get_json()
         favorite = FavoriteService.add_favorite(data['user_id'], data['promotion_id'])
         if favorite is None:
