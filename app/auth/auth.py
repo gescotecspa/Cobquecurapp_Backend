@@ -185,6 +185,20 @@ def get_all_users(current_user):
     users = UserService.get_all_users()
     return jsonify([user.serialize() for user in users])
 
+@auth_blueprint.route('/signup-partner', methods=['POST'])  # Crea el asociado
+@token_required
+def signup_partner(current_user):
+    data = request.get_json()
+    
+    # Extraer datos de la imagen si existen
+    image_data = data.pop('image_data', None)
+    
+    try:
+        user = UserService.create_user_partner(**data)
+        return jsonify(user.serialize()), 201
+    except ValueError as e:
+        return {'message': str(e)}, 400
+
 @auth_blueprint.route('/signup/bulk', methods=['POST'])
 @token_required
 def create_bulk_users(current_user):
@@ -207,6 +221,8 @@ def create_bulk_users(current_user):
     if errors:
         return jsonify({'created_users': created_users, 'errors': errors}), 207
     return jsonify({'created_users': created_users}), 201
+
+
 
 @auth_blueprint.route('/signup-partners/bulk', methods=['POST'])
 @token_required

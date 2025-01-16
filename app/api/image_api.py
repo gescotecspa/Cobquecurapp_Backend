@@ -9,7 +9,7 @@ api = Api(image_api_blueprint)
 
 class ImageResource(Resource):
     @token_required
-    def get(self, filename, current_user):
+    def get(self, current_user, filename):
         # Definir la ruta completa
         file_path = os.path.join('upload_image', filename)
         print(f"Ruta completa: {file_path}")

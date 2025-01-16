@@ -14,6 +14,7 @@ class TouristResource(Resource):
             return jsonify(tourist.serialize())
         return {'message': 'Tourist not found'}, 404
 
+    @token_required
     def put(self, current_user, user_id):
         data = request.get_json()
         tourist = TouristService.update_tourist(user_id, **data)
@@ -21,6 +22,7 @@ class TouristResource(Resource):
             return jsonify(tourist.serialize())
         return {'message': 'Tourist not found'}, 404
 
+    @token_required
     def delete(self, current_user, user_id):
         if TouristService.delete_tourist(user_id):
             return {'message': 'Tourist deleted'}, 200
@@ -31,7 +33,8 @@ class TouristListResource(Resource):
     def get(self, current_user):
         tourists = TouristService.get_all_tourists()
         return jsonify([tourist.serialize() for tourist in tourists])
-        
+
+    @token_required 
     def post(self, current_user):
         data = request.get_json()
         tourist = TouristService.create_tourist(**data)

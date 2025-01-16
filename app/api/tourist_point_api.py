@@ -14,6 +14,7 @@ class TouristPointResource(Resource):
             return tourist_point  # El objeto ya está serializado
         return {'message': 'Tourist point not found'}, 404
 
+    @token_required
     def put(self, current_user, id):
         data = request.get_json()
         # Extraer datos de las imágenes si existen
@@ -27,6 +28,7 @@ class TouristPointResource(Resource):
             return updated_tourist_point  # El objeto ya está serializado
         return {'message': 'Tourist point not found'}, 404
     
+    @token_required
     def delete(self, current_user, id):
         """Realiza un borrado lógico del punto turístico"""
         deleted_tourist_point = TouristPointService.delete_tourist_point(id)
@@ -40,6 +42,7 @@ class TouristPointListResource(Resource):
         tourist_points = TouristPointService.get_all_tourist_points()
         return tourist_points
 
+    @token_required
     def post(self, current_user):
         data = request.get_json()
         # Extraer datos de las imágenes si existen
@@ -69,7 +72,8 @@ class RatingResource(Resource):
         if not ratings:
             return {'message': 'No ratings found for this tourist point.'}, 404
         return jsonify([rating.serialize() for rating in ratings])
-    
+
+    @token_required 
     def post(self, current_user, id):
         data = request.get_json()
         rating = TouristPointService.add_rating(id, data['tourist_id'], data['rating'], data.get('comment'))
@@ -113,7 +117,8 @@ class RatingDetailResource(Resource):
             return {'message': 'Rating not found'}, 404
         return {'message': 'Rating deleted successfully'}, 200  # Mensaje de confirmación
 
-    def put(self, rating_id, current_user):
+    @token_required
+    def put(self, current_user, rating_id):
         data = request.get_json()
         rating = TouristPointService.update_rating(rating_id, data)
         if rating is None:
