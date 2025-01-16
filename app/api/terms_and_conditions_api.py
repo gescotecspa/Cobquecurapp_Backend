@@ -32,8 +32,7 @@ class TermsAndConditionsResource(Resource):
         return {'message': 'Terms and conditions not found'}, 404
 
 class TermsAndConditionsListResource(Resource):
-    @token_required
-    def get(self, current_user):
+    def get(self):
         terms_last_version = TermsAndConditionsService.get_latest_version()
         if terms_last_version:
             return terms_last_version.serialize(), 200
