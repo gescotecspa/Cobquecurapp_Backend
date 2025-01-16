@@ -1,18 +1,21 @@
 from flask import Blueprint, request, jsonify
 from flask_restful import Api, Resource
 from app.services.tourist_point_service import TouristPointService
+from app.auth.auth import token_required
 
 tourist_point_api_blueprint = Blueprint('tourist_point_api', __name__)
 api = Api(tourist_point_api_blueprint)
 
 class TouristPointResource(Resource):
-    def get(self, id):
+    @token_required
+    def get(self, current_user, id):
         tourist_point = TouristPointService.get_tourist_point_by_id(id)
         if tourist_point:
             return tourist_point  # El objeto ya está serializado
         return {'message': 'Tourist point not found'}, 404
 
-    def put(self, id):
+    @token_required
+    def put(self, current_user, id):
         data = request.get_json()
         # Extraer datos de las imágenes si existen
         # images = data.pop('images', [])
@@ -25,7 +28,8 @@ class TouristPointResource(Resource):
             return updated_tourist_point  # El objeto ya está serializado
         return {'message': 'Tourist point not found'}, 404
     
-    def delete(self, id):
+    @token_required
+    def delete(self, current_user, id):
         """Realiza un borrado lógico del punto turístico"""
         deleted_tourist_point = TouristPointService.delete_tourist_point(id)
         if deleted_tourist_point:
@@ -33,11 +37,13 @@ class TouristPointResource(Resource):
         return {'message': 'Tourist point not found'}, 404
 
 class TouristPointListResource(Resource):
-    def get(self):
+    @token_required
+    def get(self, current_user):
         tourist_points = TouristPointService.get_all_tourist_points()
         return tourist_points
 
-    def post(self):
+    @token_required
+    def post(self, current_user):
         data = request.get_json()
         # Extraer datos de las imágenes si existen
         # images = data.pop('images', [])
@@ -49,15 +55,16 @@ class TouristPointListResource(Resource):
         return tourist_point.serialize(), 201  
 
 class ImageResource(Resource):
-    def post(self, id):
+    @token_required
+    def post(self, current_user, id):
         data = request.get_json()
         # Manejo de la imagen usando ImageManager
         image = TouristPointService.add_image(id, data['image'])
         return image, 201 
 
 class RatingResource(Resource):
-    
-    def get(self, id):
+    @token_required
+    def get(self, current_user, id):
         """
         Obtener todas las valoraciones de un punto turístico específico.
         """
@@ -65,15 +72,16 @@ class RatingResource(Resource):
         if not ratings:
             return {'message': 'No ratings found for this tourist point.'}, 404
         return jsonify([rating.serialize() for rating in ratings])
-    
-    def post(self, id):
+
+    @token_required 
+    def post(self, current_user, id):
         data = request.get_json()
         rating = TouristPointService.add_rating(id, data['tourist_id'], data['rating'], data.get('comment'))
         return rating
 
 class RatingVersionedResource(Resource):
-    
-    def get(self, id, version):
+    @token_required
+    def get(self, current_user, id, version):
         """
         Obtener todas las valoraciones de un punto turístico específico.
         """
@@ -93,7 +101,8 @@ class RatingVersionedResource(Resource):
             return {'message': 'API version not supported'}, 400
 
 class AllTouristPointListResource(Resource):
-    def get(self):
+    @token_required
+    def get(self, current_user):
         """
         Obtener todos los puntos turísticos excepto aquellos con estado 'deleted'.
         """
@@ -101,13 +110,15 @@ class AllTouristPointListResource(Resource):
         return tourist_points, 200
     
 class RatingDetailResource(Resource):
-    def delete(self, rating_id):
+    @token_required
+    def delete(self, current_user, rating_id):
         success = TouristPointService.delete_rating(rating_id)
         if success is None:
             return {'message': 'Rating not found'}, 404
         return {'message': 'Rating deleted successfully'}, 200  # Mensaje de confirmación
 
-    def put(self, rating_id):
+    @token_required
+    def put(self, current_user, rating_id):
         data = request.get_json()
         rating = TouristPointService.update_rating(rating_id, data)
         if rating is None:
@@ -115,12 +126,14 @@ class RatingDetailResource(Resource):
         return rating
 
 class AverageRatingResource(Resource):
-    def get(self, id):
+    @token_required
+    def get(self, current_user, id):
         avg_rating = TouristPointService.get_average_rating(id)
         return avg_rating, 200
 
 class ImageDeleteResource(Resource):
-    def post(self, id):
+    @token_required
+    def post(self, current_user, id):
         data = request.get_json()
         image_ids = data.get('image_ids', [])
         

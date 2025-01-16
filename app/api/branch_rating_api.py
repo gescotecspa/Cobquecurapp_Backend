@@ -1,12 +1,14 @@
 from flask import Blueprint, request, jsonify
 from flask_restful import Api, Resource
 from app.services.branch_rating_service import BranchRatingService
+from app.auth.auth import token_required
 
 branch_rating_api_blueprint = Blueprint('branch_rating_api', __name__)
 api = Api(branch_rating_api_blueprint)
 
 class BranchRatingResource(Resource):
-    def post(self, branch_id):
+    @token_required
+    def post(self, current_user, branchId):
         data = request.get_json()
         user_id = data.get('user_id')
         rating = data.get('rating')
@@ -15,13 +17,14 @@ class BranchRatingResource(Resource):
         if not user_id or not rating:
             return {'message': 'user_id and rating are required'}, 400
 
-        rating = BranchRatingService.create_rating(branch_id, user_id, rating, comment)
+        rating = BranchRatingService.create_rating(branchId, user_id, rating, comment)
         if rating:
             return rating.serialize(), 201
         return {'message': 'Rating already exists for this branch and user'}, 400
 
 class BranchRatingUpdateResource(Resource):
-    def put(self, rating_id):
+    @token_required
+    def put(self, current_user, rating_id):
         data = request.get_json()
         rating = data.get('rating')
         comment = data.get('comment')
@@ -34,21 +37,23 @@ class BranchRatingUpdateResource(Resource):
             return updated_rating.serialize(), 200
         return {'message': 'Rating not found'}, 404
 
-    def delete(self, rating_id):
+    def delete(self, current_user, rating_id):
         deleted_rating = BranchRatingService.delete_rating(rating_id)
         if deleted_rating:
             return {'message': 'Rating deleted'}, 200
         return {'message': 'Rating not found'}, 404
     
 class BranchRatingSoftDeleteResource(Resource):
-    def delete(self, rating_id):
+    @token_required
+    def delete(self, current_user, rating_id):
         deleted_rating = BranchRatingService.soft_delete_rating(rating_id)
         if deleted_rating:
             return {'message': 'Rating logically deleted'}, 200
         return {'message': 'Rating not found'}, 404
     
 class BranchRatingApproveResource(Resource):
-    def put(self, rating_id):
+    @token_required
+    def put(self, current_user, rating_id):
         # Llama al servicio para aprobar la valoración
         approved_rating = BranchRatingService.approve_rating(rating_id)
         if approved_rating:
@@ -56,12 +61,13 @@ class BranchRatingApproveResource(Resource):
         return {'message': 'Rating not found or already approved'}, 404
 
 class BranchRatingsListResource(Resource):
-    def get(self, branch_id):
-        ratings_with_names = BranchRatingService.get_all_ratings_for_branch(branch_id)
+    @token_required
+    def get(self, current_user, branchId):
+        ratings_with_names = BranchRatingService.get_all_ratings_for_branch(branchId)
         if not ratings_with_names:
             return {'message': 'No ratings found for this branch'}, 404
 
-        avg_rating = BranchRatingService.get_average_rating_for_branch(branch_id)
+        avg_rating = BranchRatingService.get_average_rating_for_branch(branchId)
         
         response = {
             'ratings': [rating.serialize(first_name) for rating, first_name in ratings_with_names],
@@ -70,14 +76,14 @@ class BranchRatingsListResource(Resource):
         return response, 200
 
 class BranchAverageRatingResource(Resource):
-    def get(self, branch_id):
-        avg_rating = BranchRatingService.get_average_rating_for_branch(branch_id)
+    @token_required
+    def get(self, current_user, branchId):
+        avg_rating = BranchRatingService.get_average_rating_for_branch(branchId)
         return jsonify({'average_rating': avg_rating}), 200
 
-api.add_resource(BranchRatingResource, '/branches/<int:branch_id>/ratings')
+api.add_resource(BranchRatingResource, '/branches/<int:branchId>/ratings')
 api.add_resource(BranchRatingUpdateResource, '/branches/ratings/<int:rating_id>')
-api.add_resource(BranchRatingsListResource, '/branches/<int:branch_id>/ratings/all')
-api.add_resource(BranchAverageRatingResource, '/branches/<int:branch_id>/average_rating')
+api.add_resource(BranchRatingsListResource, '/branches/<int:branchId>/ratings/all')
+api.add_resource(BranchAverageRatingResource, '/branches/<int:branchId>/average_rating')
 api.add_resource(BranchRatingSoftDeleteResource, '/branches/ratings/soft_delete/<int:rating_id>')
 api.add_resource(BranchRatingApproveResource, '/branches/ratings/approve/<int:rating_id>')
-

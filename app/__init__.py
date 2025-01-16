@@ -35,7 +35,7 @@ def create_app():
     
 
     # Inicializar Flask-Migrate con la aplicación Flask y la instancia de SQLAlchemy
-    migrate = Migrate(app, db)
+    migrate = Migrate(app, db) # Aplica sobre la base de datos
     
     # Habilitar CORS si es necesario
     CORS(app, resources={r"*": {"origins": "*"}})
@@ -106,7 +106,7 @@ def create_app():
     # error_handlers.init_app(app)
     
     with app.app_context():
-        # db.drop_all()
+        # db.drop_all() NO descomentar esta linea
         db.create_all()
         from app.services.country_service import CountryService
         from app.services.status_load_service import StatusLoadService
@@ -114,3 +114,4 @@ def create_app():
         StatusLoadService.load_statuses()
 
     return app
+    
