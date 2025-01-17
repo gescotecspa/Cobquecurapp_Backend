@@ -2,12 +2,14 @@ from flask import Blueprint, request, jsonify
 from flask_restful import Api, Resource
 from app.services.tourist_rating_service import TouristRatingService
 from app.models.status import Status
+from app.auth.auth import token_required
 
 tourist_rating_api_blueprint = Blueprint('tourist_rating_api', __name__)
 api = Api(tourist_rating_api_blueprint)
 
 class TouristRatingResource(Resource):
-    def post(self, tourist_id):
+    @token_required
+    def post(self, current_user, tourist_id):
         data = request.get_json()  # Obtiene los datos del cuerpo de la solicitud
         if not data:
             return jsonify({'message': 'No data provided'}), 400
@@ -34,7 +36,8 @@ class TouristRatingResource(Resource):
         return {'message': error_message}, 409
     
 class TouristRatingUpdateResource(Resource):
-    def put(self, rating_id):
+    @token_required
+    def put(self, current_user, rating_id):
             data = request.get_json()
             
             # Obtener los datos de la valoración a actualizar
@@ -53,14 +56,15 @@ class TouristRatingUpdateResource(Resource):
                 return updated_rating.serialize(), 200
             return {'message': 'Rating not found'}, 404
 
-    def delete(self, rating_id):
+    def delete(self, current_user, rating_id):
         rating = TouristRatingService.delete_rating(rating_id)
         if rating:
             return rating.serialize(), 200
         return {'message': 'Rating not found'}, 404
 
 class TouristRatingsListResource(Resource):
-    def get(self, tourist_id):
+    @token_required
+    def get(self, current_user, tourist_id):
         ratings = TouristRatingService.get_all_ratings_for_tourist(tourist_id)
         average_rating = TouristRatingService.get_average_rating_for_tourist(tourist_id)
         
@@ -72,12 +76,14 @@ class TouristRatingsListResource(Resource):
         }, 200
 
 class TouristAverageRatingResource(Resource):
-    def get(self, tourist_id):
+    @token_required
+    def get(self, current_user, tourist_id):
         avg_rating = TouristRatingService.get_average_rating_for_tourist(tourist_id)
         return jsonify({'average_rating': avg_rating}), 200
     
 class TouristRatingApprovalResource(Resource):
-    def put(self, rating_id):
+    @token_required
+    def put(self, current_user, rating_id):
         updated_rating, error = TouristRatingService.approve_rating(rating_id)
         if updated_rating:
             return updated_rating.serialize(), 200

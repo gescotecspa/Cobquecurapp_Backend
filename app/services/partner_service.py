@@ -1,5 +1,6 @@
 from app import db
 from app.models import Partner, Category
+from sqlalchemy.exc import IntegrityError
 
 class PartnerService:
     @staticmethod
@@ -28,7 +29,7 @@ class PartnerService:
             if business_type is not None:
                 partner.business_type = business_type
             if category_ids is not None:
-            # Limpiar las categorías existentes
+                # Limpiar las categorías existentes
                 partner.categories = []
                 # Agregar nuevas categorías
                 for category_id in category_ids:

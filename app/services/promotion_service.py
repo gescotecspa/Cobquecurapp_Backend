@@ -198,7 +198,16 @@ class PromotionService:
 
     @staticmethod
     def get_promotions_by_partner(partner_id):
-        return Promotion.query.join(Branch).filter(Branch.partner_id == partner_id).all()
+        return (
+        Promotion.query
+        .join(Branch)
+        .join(Status, Promotion.status_id == Status.id)
+        .filter(
+            Branch.partner_id == partner_id,
+            Status.name != 'deleted' 
+        )
+        .all()
+    )
     
     @staticmethod
     def bulk_update_promotions_status(promotion_ids, status_id):
