@@ -148,7 +148,7 @@ def reset_password_request():
     user.reset_code_expiration = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
     db.session.commit()
 
-    reset_url = "https://seal-app-dx4lr.ondigitalocean.app/reset_password"
+    reset_url = "https://www.cobquecurapp.cl/reset_password"
     subject = "Password Reset Requested"
     recipients = [email]
     html_body = render_template('email/reset_password.html', reset_code=reset_code, reset_url=reset_url)
