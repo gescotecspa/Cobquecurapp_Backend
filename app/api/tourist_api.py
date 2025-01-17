@@ -35,7 +35,7 @@ class TouristListResource(Resource):
         return jsonify([tourist.serialize() for tourist in tourists])
 
 
-    def post(self, current_user):
+    def post(self):
         data = request.get_json()
         tourist = TouristService.create_tourist(**data)
         return jsonify(tourist.serialize())
