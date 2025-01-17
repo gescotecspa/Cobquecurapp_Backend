@@ -47,8 +47,7 @@ class TermsAndConditionsListResource(Resource):
         return terms.serialize(), 201
 
 class AcceptTermsResource(Resource):
-    @token_required
-    def put(self, current_user, user_id):
+    def put(self, user_id):
         try:
             user = TermsAndConditionsService.accept_terms(user_id)
             return user.serialize(), 200
