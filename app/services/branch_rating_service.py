@@ -2,6 +2,7 @@ from app import db
 from app.models import BranchRating
 from app.models.user import User
 from app.models.status import Status
+from datetime import datetime, timedelta
 
 class BranchRatingService:
     @staticmethod
@@ -83,13 +84,26 @@ class BranchRatingService:
     def get_all_ratings_for_branch(branch_id):
     # Filtra las valoraciones de la sucursal, excluyendo las que tienen el estado 'deleted'
         deleted_status = Status.query.filter_by(name="deleted").first()
+        rejected_status = Status.query.filter_by(name="rejected").first()
         return db.session.query(BranchRating, User.first_name).join(
             User, BranchRating.user_id == User.user_id
         ).filter(
             BranchRating.branch_id == branch_id,
-            (BranchRating.status_id != deleted_status.id) | (BranchRating.status_id == None)
+            (BranchRating.status_id != deleted_status.id) & 
+            (BranchRating.status_id != rejected_status.id) | 
+            (BranchRating.status_id == None)
         ).all()
-
+    @staticmethod
+    def get_all_ratings_for_branch_include_rejected(branch_id):
+    # Filtra las valoraciones de la sucursal, excluyendo las que tienen el estado 'deleted'
+        deleted_status = Status.query.filter_by(name="deleted").first()
+        return db.session.query(BranchRating, User.first_name).join(
+            User, BranchRating.user_id == User.user_id
+        ).filter(
+            BranchRating.branch_id == branch_id,
+            (BranchRating.status_id != deleted_status.id)| 
+            (BranchRating.status_id == None)
+        ).all()
     @staticmethod
     # Filtra las valoraciones de la sucursal que estén en estado 'pending' o 'approved'
     def get_average_rating_for_branch(branch_id):
@@ -100,7 +114,7 @@ class BranchRatingService:
         ratings = BranchRating.query.filter(
             BranchRating.branch_id == branch_id,
             BranchRating.status_id.in_([pending_status_id, approved_status_id]) | (BranchRating.status_id == None),
-            BranchRating.rating != None  # Excluye las valoraciones con rating NULL
+            BranchRating.rating != None
         ).all()
 
         if not ratings:
@@ -109,20 +123,58 @@ class BranchRatingService:
         total_rating = sum(rating.rating for rating in ratings if rating.rating is not None)
         return total_rating / len(ratings)
 
-    
     @staticmethod
     def approve_rating(rating_id):
         try:
-            # Busca la valoración por su ID
-            rating_record = BranchRating.query.get(rating_id)
-            if rating_record and rating_record.status.name == 'pending':
-                # Cambia el estado a 'approved'
-                approved_status = Status.query.filter_by(name='approved').first()
-                if approved_status:
-                    rating_record.status_id = approved_status.id
-                    db.session.commit()
-                    return rating_record
-            return None
+            approved_status = Status.query.filter_by(name="approved").first()
+            if not approved_status:
+                raise ValueError("Approved status not found")
+
+            rating = BranchRating.query.get(rating_id)
+            if not rating:
+                raise ValueError("Rating not found")
+
+            rating.status_id = approved_status.id
+            db.session.commit()
+            return rating
         except Exception as e:
             db.session.rollback()
             raise e
+
+    @staticmethod
+    def reject_rating(rating_id):
+        try:
+            rejected_status = Status.query.filter_by(name="rejected").first()
+            if not rejected_status:
+                raise ValueError("Approved status not found")
+
+            rating = BranchRating.query.get(rating_id)
+            if not rating:
+                raise ValueError("Rating not found")
+
+            rating.status_id = rejected_status.id
+            db.session.commit()
+            return rating
+        except Exception as e:
+            db.session.rollback()
+            raise e
+
+    @staticmethod
+    def get_ratings_last_4_weeks():
+        """
+        Obtiene todas las valoraciones de las últimas 4 semanas, asegurándose de que no tengan el estado 'deleted'.
+        """
+        four_weeks_ago = datetime.now() - timedelta(weeks=4)
+        
+        # Buscar el estado 'deleted'
+        deleted_status = Status.query.filter_by(name="deleted").first()
+        if not deleted_status:
+            return {'error': 'Deleted status not found in database'}, 500
+        
+        # Filtrar las valoraciones que fueron hechas en las últimas 4 semanas y no tengan el estado 'deleted'
+        ratings = BranchRating.query.filter(
+            BranchRating.created_at >= four_weeks_ago,
+            (BranchRating.status_id != deleted_status.id) | (BranchRating.status_id == None)
+        ).all()
+        
+        return [rating.serialize() for rating in ratings]

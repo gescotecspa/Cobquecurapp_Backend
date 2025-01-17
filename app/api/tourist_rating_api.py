@@ -87,10 +87,27 @@ class TouristRatingApprovalResource(Resource):
         updated_rating, error = TouristRatingService.approve_rating(rating_id)
         if updated_rating:
             return updated_rating.serialize(), 200
-        return {'message': error}, 404    
+        return {'message': error}, 404  
+    
+class TouristRatingRejectResource(Resource):
+    def put(self, rating_id):
+        # Llama al servicio para aprobar la valoración
+        rejected_rating = TouristRatingService.reject_rating(rating_id)
+        if rejected_rating:
+            return rejected_rating.serialize(), 200
+        return {'message': 'Rating not found or already approved'}, 404     
+    
+class TouristRatingsLast4WeeksResource(Resource):
+    def get(self):
+        ratings = TouristRatingService.get_ratings_last_4_weeks()
+        if not ratings:
+            return {'message': 'No ratings found'}, 404
+        return ratings, 200    
 
 api.add_resource(TouristRatingResource, '/tourists/<int:tourist_id>/ratings')
 api.add_resource(TouristRatingUpdateResource, '/tourists/ratings/<int:rating_id>')
 api.add_resource(TouristRatingsListResource, '/tourists/<int:tourist_id>/ratings/all')
 api.add_resource(TouristAverageRatingResource, '/tourists/<int:tourist_id>/average_rating')
 api.add_resource(TouristRatingApprovalResource, '/tourists/ratings/approve/<int:rating_id>')
+api.add_resource(TouristRatingsLast4WeeksResource, '/tourists/ratings/last-4-weeks')
+api.add_resource(TouristRatingRejectResource, '/tourists/ratings/reject/<int:rating_id>')
