@@ -31,14 +31,25 @@ def token_required(f):
 
         if not token:
             print("Token no encontrado, abortando con 401")
-            abort(401, message="Token is missing!")  # Se corta aquí
+            abort(401, message="Token is missing!") 
 
         try:
             data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
-            current_user = User.query.filter_by(email=data['email']).first()
-            if not current_user:
-                print("Usuario no encontrado, abortando con 404")
-                abort(404, message="User not found!")
+            if data.get("is_guest"):
+                print("Token de invitado detectado")
+                # Puedes hacer validaciones específicas para invitados aquí
+                current_user = {"is_guest": True, "guest_id": data.get("guest_id")}
+            else:
+                # Validar token de usuario registrado
+                print("Token de usuario registrado detectado")
+                current_user = User.query.filter_by(email=data.get('email')).first()
+                if not current_user:
+                    print("Usuario no encontrado, abortando con 404")
+                    abort(404, message="User not found!")
+            # current_user = User.query.filter_by(email=data['email']).first()
+            # if not current_user:
+            #     print("Usuario no encontrado, abortando con 404")
+            #     abort(404, message="User not found!")
         except jwt.ExpiredSignatureError:
             abort(401, message="Token has expired!")
         except jwt.InvalidTokenError as e:
@@ -48,7 +59,7 @@ def token_required(f):
 
         print("Token válido. Llamando a la función decorada.")
         # Aquí sí podemos imprimir la respuesta exitosa
-        result = f(current_user, *args, **kwargs)
+        result = f(current_user=current_user, *args, **kwargs)
         
         return result
 
@@ -95,6 +106,28 @@ def login():
 
     return jsonify({'message': 'Contraseña inválida'}), 401
 
+@auth_blueprint.route('/guest-login', methods=['POST'])
+def guest_login():
+        # Generar un identificador único para el invitado
+    guest_id = str(uuid.uuid4())
+    expiration_time = datetime.datetime.utcnow() + datetime.timedelta(hours=24)  # Duración del token
+
+        # Crear el payload del token
+    payload = {
+            "is_guest": True,
+            "guest_id": guest_id,
+            "exp": expiration_time
+        }
+
+        # Generar el token
+    try:
+        token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm="HS256")
+        if isinstance(token, bytes):
+                token = token.decode('utf-8')
+        return jsonify({"guest_token": token}), 200
+    except Exception as e:
+        return jsonify({"message": f"Error al generar el token: {str(e)}"}), 500
+        
 @auth_blueprint.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json()
@@ -114,6 +147,16 @@ def signup():
 @auth_blueprint.route('/user', methods=['GET'])
 @token_required
 def get_user(current_user):
+    if isinstance(current_user, dict):
+        #     # Verifica si es un invitado
+        if current_user.get("is_guest"):
+            print("Es invitado primer ingreso?", current_user.get("is_guest"))
+            return {"message": "Acceso denegado: solo usuarios registrados pueden acceder a esta ruta."}, 403
+    else:
+            # Verifica si el usuario registrado es un invitado
+        if hasattr(current_user, "is_guest") and current_user.is_guest:
+            print("Es invitado segundo?", current_user.is_guest)
+            return {"message": "Acceso denegado: solo usuarios registrados pueden acceder a esta ruta."}, 403
     return jsonify(current_user.serialize())
 
 @auth_blueprint.route('/user/<int:user_id>', methods=['PUT'])
@@ -251,3 +294,5 @@ def signup_partners(current_user):
     return jsonify({
         'created_users': created_users
     }), 201
+    
+   
