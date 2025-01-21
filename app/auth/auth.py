@@ -4,20 +4,24 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import jwt
 import uuid
-from ..models.user import User
-from ..services.user_service import UserService
-from app import db
 import random
 import string
+from functools import wraps
+from werkzeug.security import generate_password_hash, check_password_hash
+from ..models.user import User
+from ..services.user_service import UserService
 from ..common.email_utils import send_email
 from datetime import datetime, timedelta, timezone
 import os
-auth_blueprint = Blueprint('auth', __name__)
-from functools import wraps
-import jwt
-from flask import request, current_app
+from app import db
 
+auth_blueprint = Blueprint('auth', __name__)
 def token_required(f):
+    """
+    Decorador que maneja la necesidad de token según la variable `token_required` en .env:
+    - Si en .env: token_required = "true"  => Se exige token (401 si no llega).
+    - Si en .env: token_required = "false" => El token es opcional.
+    """
     @wraps(f)
     def decorated(*args, **kwargs):
         # Leer variable del .env en minúsculas
@@ -33,7 +37,6 @@ def token_required(f):
         if not token:
             # Si NO hay token
             if is_token_required == "True":
-
                 # Si .env dice "true", exigimos token
                 rest_abort(401, message="Token is missing!")
             else:
@@ -64,19 +67,19 @@ def token_required(f):
             rest_abort(500, message=f"Error al validar el token: {str(e)}")
 
         return f(*args, **kwargs)
-    
+
     return decorated
 
-
-
+# =====================================
+# RUTAS DE AUTENTICACIÓN
+# =====================================
 
 @auth_blueprint.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
-
-    # Verificar si se envían los datos requeridos
     if not data or not data.get('email') or not data.get('password'):
         return jsonify({'message': 'Debe ingresar email y contraseña'}), 400
+
     print(data['email'], data['password'])
     
     platform = data.get('platform')
@@ -84,15 +87,14 @@ def login():
         return jsonify({'message': 'Plataforma incorrecta'}), 400
 
     # Obtener el usuario por email
+
     user = UserService.get_user_by_email(data['email'])
-    print(user)
-    # Si el usuario no existe
     if not user:
         return jsonify({'message': 'No existe el usuario'}), 404
 
-    # Verificar la contraseña
     if check_password_hash(user.password, data['password']):
         try:
+
             # Registrar fecha de login (ahora con zona horaria UTC explícita)
             user.last_login_at = datetime.now(timezone.utc)
 
@@ -113,11 +115,8 @@ def login():
                 algorithm="HS256"
             )
 
-            # Convertir token a cadena si es necesario
             if isinstance(token, bytes):
                 token = token.decode('utf-8')
-
-            # Devolver el token y los datos del usuario
             return jsonify({'token': token, 'user': user.serialize()}), 200
 
         except Exception as e:
@@ -125,6 +124,7 @@ def login():
             return jsonify({'message': f'Error al procesar el login: {str(e)}'}), 500
 
     return jsonify({'message': 'Contraseña inválida'}), 401
+
 
 @auth_blueprint.route('/guest-login', methods=['POST'])
 def guest_login():
@@ -148,11 +148,10 @@ def guest_login():
     except Exception as e:
         return jsonify({"message": f"Error al generar el token: {str(e)}"}), 500
         
+
 @auth_blueprint.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json()
-
-    # Extraer datos de la imagen si existen
     image_data = data.pop('image_data', None)
 
     try:
@@ -163,6 +162,11 @@ def signup():
         return jsonify(user.serialize()), 201
     except ValueError as e:
         return {'message': str(e)}, 400
+
+
+# =====================================
+# RUTAS QUE DEPENDEN DE LA VARIABLE token_required
+# =====================================
 
 @auth_blueprint.route('/user', methods=['GET'])
 @token_required
@@ -179,12 +183,45 @@ def get_user(current_user):
             return {"message": "Acceso denegado: solo usuarios registrados pueden acceder a esta ruta."}, 403
     return jsonify(current_user.serialize())
 
+
+@auth_blueprint.route('/users', methods=['GET'])
+@token_required
+def get_all_users(current_user=None):
+    """
+    - Si token_required = "false" y no envías token => current_user=None => lógica antigua
+    - Si llega un token de invitado => dict con is_guest
+    - Si llega token de usuario => current_user es User
+    """
+    if current_user is None:
+        # Sin token (modo antiguo)
+        return jsonify({"message": "Versión antigua: sin token, vista limitada de usuarios"}), 200
+    
+    if isinstance(current_user, dict) and current_user.get('is_guest'):
+        return {"message": "Invitado no puede ver la lista completa de usuarios."}, 403
+    
+    # Usuario registrado con token
+    users = UserService.get_all_users()
+    return jsonify([user.serialize() for user in users]), 200
+
+
+# =====================================
+# RUTAS QUE REALMENTE REQUIEREN TOKEN
+# (p.ej., acceso crítico)
+# =====================================
 @auth_blueprint.route('/user/<int:user_id>', methods=['PUT'])
 @token_required
 def update_user(current_user, user_id):
-    data = request.get_json()
+    """
+    Si token_required = "false" en .env, este endpoint igual permite "pasar sin token"???
+    - Con esta configuración actual, sí. Depende de lo que quieras hacer.
+    - Si deseas forzar el token para ciertos endpoints aunque el .env diga "false",
+      deberías cambiar la lógica o tener otro decorador.
+    """
+    if current_user is None:
+        # Lógica si se permite sin token (solo cuando .env="false")
+        return {"message": "No tienes token para actualizar usuario."}, 403
 
-    # Extraer datos de la imagen si existen
+    data = request.get_json()
     image_data = data.pop('image_data', None)
 
     user = UserService.update_user(user_id, **data, image_data=image_data)
@@ -248,12 +285,14 @@ def get_all_users(current_user):
     users = UserService.get_all_users()
     return jsonify([user.serialize() for user in users])
 
-@auth_blueprint.route('/signup-partner', methods=['POST'])  # Crea el asociado
+
+@auth_blueprint.route('/signup-partner', methods=['POST'])
 @token_required
 def signup_partner(current_user):
+    if current_user is None:
+        return {"message": "No token, acción no permitida"}, 403
+
     data = request.get_json()
-    
-    # Extraer datos de la imagen si existen
     image_data = data.pop('image_data', None)
     
     try:
@@ -262,11 +301,17 @@ def signup_partner(current_user):
     except ValueError as e:
         return {'message': str(e)}, 400
 
+
+# =====================================
+# BULK CREATION (también protegidas)
+# =====================================
 @auth_blueprint.route('/signup/bulk', methods=['POST'])
 @token_required
 def create_bulk_users(current_user):
-    data = request.get_json()
+    if current_user is None:
+        return {"message": "No token, acción no permitida"}, 403
 
+    data = request.get_json()
     if not isinstance(data, list):
         return {'message': 'Invalid data format. Expected a list of users.'}, 400
 
@@ -286,12 +331,13 @@ def create_bulk_users(current_user):
     return jsonify({'created_users': created_users}), 201
 
 
-
 @auth_blueprint.route('/signup-partners/bulk', methods=['POST'])
 @token_required
 def signup_partners(current_user):
-    data = request.get_json()
+    if current_user is None:
+        return {"message": "No token, acción no permitida"}, 403
 
+    data = request.get_json()
     if not isinstance(data, list):
         return {'message': 'Invalid data format. Expected a list of partners.'}, 400
 
@@ -314,5 +360,4 @@ def signup_partners(current_user):
     return jsonify({
         'created_users': created_users
     }), 201
-    
-   
+
