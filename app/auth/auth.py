@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, make_response, current_app, render_template
-from flask_restful import abort
+from flask_restful import abort as rest_abort
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import jwt
@@ -11,9 +11,8 @@ import random
 import string
 from ..common.email_utils import send_email
 from datetime import datetime, timedelta, timezone
-
+import os
 auth_blueprint = Blueprint('auth', __name__)
-
 from functools import wraps
 import jwt
 from flask import request, current_app
@@ -21,48 +20,51 @@ from flask import request, current_app
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        print("Iniciando verificación de token...")
+        # Leer variable del .env en minúsculas
+        is_token_required = os.getenv("token_required", False)
 
         token = None
+        # Verificar cabecera Authorization
         if 'Authorization' in request.headers:
             parts = request.headers['Authorization'].split()
             if len(parts) == 2 and parts[0].lower() == 'bearer':
                 token = parts[1]
 
         if not token:
-            print("Token no encontrado, abortando con 401")
-            abort(401, message="Token is missing!") 
+            # Si NO hay token
+            if is_token_required == "True":
 
+                # Si .env dice "true", exigimos token
+                rest_abort(401, message="Token is missing!")
+            else:
+                # Si .env dice "false", no exigimos token
+                kwargs['current_user'] = None
+                return f(*args, **kwargs)
+
+        # Si hay token, lo validamos
         try:
             data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
+
+            # Verificar si es un token de invitado
             if data.get("is_guest"):
-                print("Token de invitado detectado")
-                # Puedes hacer validaciones específicas para invitados aquí
                 current_user = {"is_guest": True, "guest_id": data.get("guest_id")}
             else:
-                # Validar token de usuario registrado
-                print("Token de usuario registrado detectado")
+                # Token de usuario registrado
                 current_user = User.query.filter_by(email=data.get('email')).first()
                 if not current_user:
-                    print("Usuario no encontrado, abortando con 404")
-                    abort(404, message="User not found!")
-            # current_user = User.query.filter_by(email=data['email']).first()
-            # if not current_user:
-            #     print("Usuario no encontrado, abortando con 404")
-            #     abort(404, message="User not found!")
+                    rest_abort(404, message="User not found!")
+            
+            kwargs['current_user'] = current_user
+
         except jwt.ExpiredSignatureError:
-            abort(401, message="Token has expired!")
+            rest_abort(401, message="Token has expired!")
         except jwt.InvalidTokenError as e:
-            abort(401, message=f"Token is invalid: {str(e)}")
+            rest_abort(401, message=f"Token is invalid: {str(e)}")
         except Exception as e:
-            abort(500, message=f"Error al validar el token: {str(e)}")
+            rest_abort(500, message=f"Error al validar el token: {str(e)}")
 
-        print("Token válido. Llamando a la función decorada.")
-        # Aquí sí podemos imprimir la respuesta exitosa
-        result = f(current_user=current_user, *args, **kwargs)
-        
-        return result
-
+        return f(*args, **kwargs)
+    
     return decorated
 
 
