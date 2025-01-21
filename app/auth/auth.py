@@ -78,7 +78,8 @@ def login():
     print(data['email'], data['password'])
     
     platform = data.get('platform')
-    if platform != "android" and platform != "ios":
+    print(platform)
+    if platform and platform != "android" and platform != "ios":
         return jsonify({'message': 'Plataforma incorrecta'}), 400
 
     # Obtener el usuario por email
@@ -174,7 +175,6 @@ def get_user(current_user):
     else:
             # Verifica si el usuario registrado es un invitado
         if hasattr(current_user, "is_guest") and current_user.is_guest:
-            print("Es invitado segundo?", current_user.is_guest)
             return {"message": "Acceso denegado: solo usuarios registrados pueden acceder a esta ruta."}, 403
     return jsonify(current_user.serialize())
 
@@ -182,14 +182,10 @@ def get_user(current_user):
 @auth_blueprint.route('/users', methods=['GET'])
 @token_required
 def get_all_users(current_user=None):
-    """
-    - Si token_required = "false" y no envías token => current_user=None => lógica antigua
-    - Si llega un token de invitado => dict con is_guest
-    - Si llega token de usuario => current_user es User
-    """
+
     if current_user is None:
         # Sin token (modo antiguo)
-        return jsonify({"message": "Versión antigua: sin token, vista limitada de usuarios"}), 200
+        return jsonify({"message": "Debes ingresar un token para solicitar los usuarios."}), 200
     
     if isinstance(current_user, dict) and current_user.get('is_guest'):
         return {"message": "Invitado no puede ver la lista completa de usuarios."}, 403
@@ -279,7 +275,7 @@ def reset_password():
 @token_required
 def signup_partner(current_user):
     if current_user is None:
-        return {"message": "No token, acción no permitida"}, 403
+        return {"message": "No puedes registrar un asociado sin el token correspondiente"}, 403
 
     data = request.get_json()
     image_data = data.pop('image_data', None)
