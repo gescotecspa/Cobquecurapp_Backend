@@ -1,26 +1,21 @@
-import os
+from flask import Blueprint, request, jsonify, make_response, current_app, render_template
+from flask_restful import abort as rest_abort
+from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 import jwt
-import datetime
 import uuid
 import random
 import string
-
 from functools import wraps
-from flask import Blueprint, request, jsonify, current_app, render_template
-from flask_restful import abort as rest_abort
 from werkzeug.security import generate_password_hash, check_password_hash
-
-# Importaciones de tu proyecto (ajusta la ruta según corresponda)
 from ..models.user import User
 from ..services.user_service import UserService
 from ..common.email_utils import send_email
+from datetime import datetime, timedelta, timezone
+import os
 from app import db
 
 auth_blueprint = Blueprint('auth', __name__)
-
-# =====================================
-# DECORADOR
-# =====================================
 def token_required(f):
     """
     Decorador que maneja la necesidad de token según la variable `token_required` en .env:
@@ -42,7 +37,6 @@ def token_required(f):
         if not token:
             # Si NO hay token
             if is_token_required == "True":
-
                 # Si .env dice "true", exigimos token
                 rest_abort(401, message="Token is missing!")
             else:
@@ -73,6 +67,7 @@ def token_required(f):
             rest_abort(500, message=f"Error al validar el token: {str(e)}")
 
         return f(*args, **kwargs)
+
     return decorated
 
 # =====================================
@@ -85,47 +80,74 @@ def login():
     if not data or not data.get('email') or not data.get('password'):
         return jsonify({'message': 'Debe ingresar email y contraseña'}), 400
 
+    print(data['email'], data['password'])
+    
+    platform = data.get('platform')
+    if platform != "android" and platform != "ios":
+        return jsonify({'message': 'Plataforma incorrecta'}), 400
+
+    # Obtener el usuario por email
+
     user = UserService.get_user_by_email(data['email'])
     if not user:
         return jsonify({'message': 'No existe el usuario'}), 404
 
     if check_password_hash(user.password, data['password']):
         try:
+
+            # Registrar fecha de login (ahora con zona horaria UTC explícita)
+            user.last_login_at = datetime.now(timezone.utc)
+
+            # Registrar versión de la app y plataforma, si están presentes
+            user.app_version = data.get('app_version', user.app_version) 
+            user.platform = data.get('platform', user.platform)
+
+            # Guardar cambios en la base de datos
+            db.session.commit()
+
+            # Generar el token JWT
             token = jwt.encode(
                 {
                     'email': user.email,
-                    'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+                    'exp': datetime.now(timezone.utc) + timedelta(hours=1)
                 },
                 current_app.config['SECRET_KEY'],
                 algorithm="HS256"
             )
+
             if isinstance(token, bytes):
                 token = token.decode('utf-8')
             return jsonify({'token': token, 'user': user.serialize()}), 200
+
         except Exception as e:
-            return jsonify({'message': f'Error al generar el token: {str(e)}'}), 500
+            db.session.rollback()  # Deshacer cambios en caso de error
+            return jsonify({'message': f'Error al procesar el login: {str(e)}'}), 500
 
     return jsonify({'message': 'Contraseña inválida'}), 401
 
 
 @auth_blueprint.route('/guest-login', methods=['POST'])
 def guest_login():
+        # Generar un identificador único para el invitado
     guest_id = str(uuid.uuid4())
-    expiration_time = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
-    payload = {
-        "is_guest": True,
-        "guest_id": guest_id,
-        "exp": expiration_time
-    }
+    expiration_time = datetime.now(timezone.utc) + timedelta(hours=24)
 
+        # Crear el payload del token
+    payload = {
+            "is_guest": True,
+            "guest_id": guest_id,
+            "exp": expiration_time
+        }
+
+        # Generar el token
     try:
         token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm="HS256")
         if isinstance(token, bytes):
-            token = token.decode('utf-8')
+                token = token.decode('utf-8')
         return jsonify({"guest_token": token}), 200
     except Exception as e:
         return jsonify({"message": f"Error al generar el token: {str(e)}"}), 500
-
+        
 
 @auth_blueprint.route('/signup', methods=['POST'])
 def signup():
@@ -148,21 +170,18 @@ def signup():
 
 @auth_blueprint.route('/user', methods=['GET'])
 @token_required
-def get_user(current_user=None):
-    """
-    Si token_required = "true" y no envías token => 401
-    Si token_required = "false" y no envías token => current_user=None
-    """
-    if current_user is None:
-        # Sin token (cuando .env => "false")
-        return jsonify({"message": "Versión antigua: no se ha enviado token"}), 200
-    
-    if isinstance(current_user, dict) and current_user.get("is_guest"):
-        # Invitado
-        return {"message": "Eres invitado, no puedes acceder a esta ruta de usuario registrado."}, 403
-    
-    # Usuario con token válido
-    return jsonify(current_user.serialize()), 200
+def get_user(current_user):
+    if isinstance(current_user, dict):
+        #     # Verifica si es un invitado
+        if current_user.get("is_guest"):
+            print("Es invitado primer ingreso?", current_user.get("is_guest"))
+            return {"message": "Acceso denegado: solo usuarios registrados pueden acceder a esta ruta."}, 403
+    else:
+            # Verifica si el usuario registrado es un invitado
+        if hasattr(current_user, "is_guest") and current_user.is_guest:
+            print("Es invitado segundo?", current_user.is_guest)
+            return {"message": "Acceso denegado: solo usuarios registrados pueden acceder a esta ruta."}, 403
+    return jsonify(current_user.serialize())
 
 
 @auth_blueprint.route('/users', methods=['GET'])
@@ -209,6 +228,62 @@ def update_user(current_user, user_id):
     if user:
         return jsonify(user.serialize())
     return {'message': 'User not found'}, 404
+
+# Restablecer contraseña
+def generate_reset_code(length=8):
+    letters_and_digits = string.ascii_letters + string.digits
+    return ''.join(random.choice(letters_and_digits) for i in range(length))
+
+@auth_blueprint.route('/reset_password', methods=['POST'])
+def reset_password_request():
+    data = request.get_json()
+    email = data.get('email')
+
+    user = UserService.get_user_by_email(email)
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    reset_code = generate_reset_code()
+    user.reset_code = reset_code
+    user.reset_code_expiration = datetime.datetime.utcnow() + timedelta(hours=1)
+    db.session.commit()
+
+    reset_url = "https://www.cobquecurapp.cl/reset_password"
+    subject = "Password Reset Requested"
+    recipients = [email]
+    html_body = render_template('email/reset_password.html', reset_code=reset_code, reset_url=reset_url)
+
+    send_email(subject, recipients, html_body)
+
+    return jsonify({'message': 'Password reset email sent'}), 200
+
+@auth_blueprint.route('/reset_password/new_password', methods=['PUT'])
+def reset_password():
+    data = request.get_json()
+    email = data.get('email')
+    code = data.get('code')
+    new_password = data.get('password')
+
+    user = UserService.get_user_by_email(email)
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    if user.reset_code != code or user.reset_code_expiration < datetime.datetime.utcnow():
+        return jsonify({'message': 'Invalid or expired reset code'}), 400
+
+    hashed_password = generate_password_hash(new_password)
+    user.password = hashed_password
+    user.reset_code = None
+    user.reset_code_expiration = None
+    db.session.commit()
+
+    return jsonify({'message': 'Password has been reset'}), 200
+
+@auth_blueprint.route('/users', methods=['GET'])
+@token_required
+def get_all_users(current_user):
+    users = UserService.get_all_users()
+    return jsonify([user.serialize() for user in users])
 
 
 @auth_blueprint.route('/signup-partner', methods=['POST'])
@@ -286,57 +361,3 @@ def signup_partners(current_user):
         'created_users': created_users
     }), 201
 
-
-# =====================================
-# RESTABLECER CONTRASEÑA (SIN TOKEN)
-# =====================================
-def generate_reset_code(length=8):
-    letters_and_digits = string.ascii_letters + string.digits
-    return ''.join(random.choice(letters_and_digits) for i in range(length))
-
-
-@auth_blueprint.route('/reset_password', methods=['POST'])
-def reset_password_request():
-    data = request.get_json()
-    email = data.get('email')
-
-    user = UserService.get_user_by_email(email)
-    if not user:
-        return jsonify({'message': 'User not found'}), 404
-
-    reset_code = generate_reset_code()
-    user.reset_code = reset_code
-    user.reset_code_expiration = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
-    db.session.commit()
-
-    reset_url = "https://www.cobquecurapp.cl/reset_password"
-    subject = "Password Reset Requested"
-    recipients = [email]
-    html_body = render_template('email/reset_password.html', reset_code=reset_code, reset_url=reset_url)
-
-    send_email(subject, recipients, html_body)
-
-    return jsonify({'message': 'Password reset email sent'}), 200
-
-
-@auth_blueprint.route('/reset_password/new_password', methods=['PUT'])
-def reset_password():
-    data = request.get_json()
-    email = data.get('email')
-    code = data.get('code')
-    new_password = data.get('password')
-
-    user = UserService.get_user_by_email(email)
-    if not user:
-        return jsonify({'message': 'User not found'}), 404
-
-    if user.reset_code != code or user.reset_code_expiration < datetime.datetime.utcnow():
-        return jsonify({'message': 'Invalid or expired reset code'}), 400
-
-    hashed_password = generate_password_hash(new_password)
-    user.password = hashed_password
-    user.reset_code = None
-    user.reset_code_expiration = None
-    db.session.commit()
-
-    return jsonify({'message': 'Password has been reset'}), 200

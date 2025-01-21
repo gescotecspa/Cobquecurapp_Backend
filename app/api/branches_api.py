@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, abort, request, jsonify
 from flask_restful import Api, Resource
 from app.services.branch_service import BranchService
 from app.auth.auth import token_required
@@ -49,6 +49,17 @@ class BranchListResource(Resource):
 class PartnerBranchesResource(Resource):
     @token_required
     def get(self, current_user, partnerId):
+        # if isinstance(current_user, dict):
+        #     # Verifica si es un invitado
+        #     if current_user.get("is_guest"):
+        #         print("Es invitado primer ingreso?", current_user.get("is_guest"))
+        #         return {"message": "Acceso denegado: solo usuarios registrados pueden acceder a esta ruta."}, 403
+        # else:
+        #     # Verifica si el usuario registrado es un invitado
+        #     if hasattr(current_user, "is_guest") and current_user.is_guest:
+        #         print("Es invitado segundo?", current_user.is_guest)
+        #         return {"message": "Acceso denegado: solo usuarios registrados pueden acceder a esta ruta."}, 403
+
         branches = BranchService.get_branches_by_partner_id(partnerId)
         if branches:
             return jsonify([branch.serialize() for branch in branches])
