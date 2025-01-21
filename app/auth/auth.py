@@ -3,7 +3,6 @@ from flask_restful import abort
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import jwt
-import datetime
 import uuid
 from ..models.user import User
 from ..services.user_service import UserService
@@ -11,6 +10,7 @@ from app import db
 import random
 import string
 from ..common.email_utils import send_email
+from datetime import datetime, timedelta, timezone
 
 auth_blueprint = Blueprint('auth', __name__)
 
@@ -76,6 +76,11 @@ def login():
     if not data or not data.get('email') or not data.get('password'):
         return jsonify({'message': 'Debe ingresar email y contraseña'}), 400
     print(data['email'], data['password'])
+    
+    platform = data.get('platform')
+    if platform != "android" and platform != "ios":
+        return jsonify({'message': 'Plataforma incorrecta'}), 400
+
     # Obtener el usuario por email
     user = UserService.get_user_by_email(data['email'])
     print(user)
@@ -86,23 +91,36 @@ def login():
     # Verificar la contraseña
     if check_password_hash(user.password, data['password']):
         try:
+            # Registrar fecha de login (ahora con zona horaria UTC explícita)
+            user.last_login_at = datetime.now(timezone.utc)
+
+            # Registrar versión de la app y plataforma, si están presentes
+            user.app_version = data.get('app_version', user.app_version) 
+            user.platform = data.get('platform', user.platform)
+
+            # Guardar cambios en la base de datos
+            db.session.commit()
+
             # Generar el token JWT
             token = jwt.encode(
                 {
                     'email': user.email,
-                    'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+                    'exp': datetime.now(timezone.utc) + timedelta(hours=1)
                 },
                 current_app.config['SECRET_KEY'],
                 algorithm="HS256"
             )
+
             # Convertir token a cadena si es necesario
             if isinstance(token, bytes):
                 token = token.decode('utf-8')
 
             # Devolver el token y los datos del usuario
             return jsonify({'token': token, 'user': user.serialize()}), 200
+
         except Exception as e:
-            return jsonify({'message': f'Error al generar el token: {str(e)}'}), 500
+            db.session.rollback()  # Deshacer cambios en caso de error
+            return jsonify({'message': f'Error al procesar el login: {str(e)}'}), 500
 
     return jsonify({'message': 'Contraseña inválida'}), 401
 
@@ -110,7 +128,7 @@ def login():
 def guest_login():
         # Generar un identificador único para el invitado
     guest_id = str(uuid.uuid4())
-    expiration_time = datetime.datetime.utcnow() + datetime.timedelta(hours=24)  # Duración del token
+    expiration_time = datetime.now(timezone.utc) + timedelta(hours=24)
 
         # Crear el payload del token
     payload = {
@@ -188,7 +206,7 @@ def reset_password_request():
 
     reset_code = generate_reset_code()
     user.reset_code = reset_code
-    user.reset_code_expiration = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+    user.reset_code_expiration = datetime.datetime.utcnow() + timedelta(hours=1)
     db.session.commit()
 
     reset_url = "https://www.cobquecurapp.cl/reset_password"
