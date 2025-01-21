@@ -17,11 +17,6 @@ from app import db
 
 auth_blueprint = Blueprint('auth', __name__)
 def token_required(f):
-    """
-    Decorador que maneja la necesidad de token según la variable `token_required` en .env:
-    - Si en .env: token_required = "true"  => Se exige token (401 si no llega).
-    - Si en .env: token_required = "false" => El token es opcional.
-    """
     @wraps(f)
     def decorated(*args, **kwargs):
         # Leer variable del .env en minúsculas
