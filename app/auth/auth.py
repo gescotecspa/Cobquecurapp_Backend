@@ -66,6 +66,39 @@ def token_required(f):
     return decorated
 
 # =====================================
+# ACTUALIZAR TOKEN
+# =====================================
+@auth_blueprint.route("/refresh", methods=["POST"])
+def refresh_token():
+    token = request.headers.get("Authorization")
+    if not token:
+        return jsonify({"message": "Token is missing!"}), 401
+
+    try:
+        # Decodificar el token de actualización
+        token = token.split(" ")[1]
+        data = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
+        email = data["email"]
+
+        # Verificar si el usuario existe
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            return jsonify({"message": "User not found!"}), 404
+
+        # Generar un nuevo access token
+        new_access_token = jwt.encode(
+            {"email": email, "exp": datetime.now(timezone.utc) + timedelta(hours=1)},
+            current_app.config["SECRET_KEY"],
+            algorithm="HS256",
+        )
+
+        return jsonify({"access_token": new_access_token}), 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({"message": "Refresh token expired"}), 401
+    except jwt.InvalidTokenError as e:
+        return jsonify({"message": f"Invalid token: {str(e)}"}), 401
+# =====================================
 # RUTAS DE AUTENTICACIÓN
 # =====================================
 
