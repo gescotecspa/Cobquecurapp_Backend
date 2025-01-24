@@ -28,6 +28,10 @@ class User(db.Model):
     terms = db.relationship('TermsAndConditions', backref='users')
     terms_accepted_at = db.Column(db.DateTime, nullable=True, default=datetime.utcnow)
     
+    app_version = db.Column(db.String(20), nullable=True)  # Versión de la app
+    platform = db.Column(db.String(50), nullable=True)     # ej. Android, iOS
+    last_login_at = db.Column(db.DateTime, nullable=True)
+    
     def serialize(self):
         local_tz = pytz.timezone('America/Santiago')
     
@@ -52,4 +56,7 @@ class User(db.Model):
             "roles": [role.serialize() for role in self.roles],
             'terms': self.terms.serialize() if self.terms else None,
             'terms_accepted_at': terms_accepted_at.strftime('%Y-%m-%dT%H:%M:%S %z') if terms_accepted_at else None,
+            'app_version': self.app_version,
+            'platform': self.platform,
+            'last_login_at': self.last_login_at.strftime('%Y-%m-%dT%H:%M:%S %z') if self.last_login_at else None,
         }

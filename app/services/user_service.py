@@ -19,7 +19,7 @@ class UserService:
 
     @staticmethod
     def get_user_by_email(email: str):
-    # Busca el usuario por email y que el status no sea "deleted"
+        # Busca el usuario por email y que el status no sea "deleted"
         return User.query.join(User.status).filter(
             func.lower(User.email) == func.lower(email),
             User.status.has(name='deleted') == False
@@ -35,6 +35,9 @@ class UserService:
         print(existing_user)
         if existing_user and existing_user.status.name != 'deleted':
             raise ValueError("A user with that email already exists.")
+
+        if not accept_terms:
+            raise ValueError("Debe aceptar los términos y condiciones.")
 
         hashed_password = generate_password_hash(password)
         
