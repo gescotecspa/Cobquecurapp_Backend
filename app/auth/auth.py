@@ -269,7 +269,7 @@ def reset_password_request():
 
     reset_code = generate_reset_code()
     user.reset_code = reset_code
-    user.reset_code_expiration = datetime.datetime.utcnow() + timedelta(hours=1)
+    user.reset_code_expiration = datetime.now(timezone.utc) + timedelta(hours=1)
     db.session.commit()
 
     reset_url = "https://www.cobquecurapp.cl/reset_password"
@@ -292,7 +292,7 @@ def reset_password():
     if not user:
         return jsonify({'message': 'User not found'}), 404
 
-    if user.reset_code != code or user.reset_code_expiration < datetime.datetime.utcnow():
+    if user.reset_code != code or user.reset_code_expiration < datetime.now(timezone.utc):
         return jsonify({'message': 'Invalid or expired reset code'}), 400
 
     hashed_password = generate_password_hash(new_password)
