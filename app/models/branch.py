@@ -5,7 +5,7 @@ from app.models.status import Status
 from sqlalchemy import or_
 
 class Branch(db.Model):
-    _tablename_ = 'branches'
+    __tablename__ = 'branches'
 
     branch_id = db.Column(db.Integer, primary_key=True)
     partner_id = db.Column(db.Integer, db.ForeignKey('partner_details.user_id', onupdate='CASCADE', ondelete='CASCADE'), nullable=False)
