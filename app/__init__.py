@@ -100,7 +100,10 @@ def create_app():
     
     from app.api.app_version_api import app_version_api_blueprint
     app.register_blueprint(app_version_api_blueprint)
-    
+
+    from app.api.metrics_api import metrics_bp
+    app.register_blueprint(metrics_bp, url_prefix='/metrics')
+
     # Importar modelos para asegurarse de que se reconocen al crear la base de datos
     
     from app.models import user, category, tourist, partner, promotion, branch, favorite, funcionality, role_funcionality, user_role, status, promotion_consumed, app_version

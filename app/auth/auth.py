@@ -82,9 +82,9 @@ def login():
 
     print(data['email'], data['password'])
     
-    platform = data.get('platform')
-    if platform != "android" and platform != "ios":
-        return jsonify({'message': 'Plataforma incorrecta'}), 400
+    # platform = data.get('platform')
+    # if platform != "android" and platform != "ios":
+    #     return jsonify({'message': 'Plataforma incorrecta'}), 400
 
     # Obtener el usuario por email
 
@@ -278,13 +278,6 @@ def reset_password():
     db.session.commit()
 
     return jsonify({'message': 'Password has been reset'}), 200
-
-@auth_blueprint.route('/users', methods=['GET'])
-@token_required
-def get_all_users(current_user):
-    users = UserService.get_all_users()
-    return jsonify([user.serialize() for user in users])
-
 
 @auth_blueprint.route('/signup-partner', methods=['POST'])
 @token_required

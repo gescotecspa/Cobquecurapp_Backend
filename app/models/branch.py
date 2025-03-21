@@ -5,7 +5,7 @@ from app.models.status import Status
 from sqlalchemy import or_
 
 class Branch(db.Model):
-    __tablename__ = 'branches'
+    _tablename_ = 'branches'
 
     branch_id = db.Column(db.Integer, primary_key=True)
     partner_id = db.Column(db.Integer, db.ForeignKey('partner_details.user_id', onupdate='CASCADE', ondelete='CASCADE'), nullable=False)
@@ -52,5 +52,5 @@ class Branch(db.Model):
             "average_rating": self.average_rating()
         }
 
-    def __repr__(self):
+    def _repr_(self):
         return f'<Branch {self.name}>'
