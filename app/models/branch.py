@@ -52,5 +52,5 @@ class Branch(db.Model):
             "average_rating": self.average_rating()
         }
 
-    def __repr__(self):
+    def _repr_(self):
         return f'<Branch {self.name}>'
