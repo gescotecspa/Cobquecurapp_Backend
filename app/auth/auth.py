@@ -17,11 +17,6 @@ from app import db
 
 auth_blueprint = Blueprint('auth', __name__)
 def token_required(f):
-    """
-    Decorador que maneja la necesidad de token según la variable `token_required` en .env:
-    - Si en .env: token_required = "true"  => Se exige token (401 si no llega).
-    - Si en .env: token_required = "false" => El token es opcional.
-    """
     @wraps(f)
     def decorated(*args, **kwargs):
         # Leer variable del .env en minúsculas
@@ -71,6 +66,39 @@ def token_required(f):
     return decorated
 
 # =====================================
+# ACTUALIZAR TOKEN
+# =====================================
+@auth_blueprint.route("/refresh", methods=["POST"])
+def refresh_token():
+    token = request.headers.get("Authorization")
+    if not token:
+        return jsonify({"message": "Token is missing!"}), 401
+
+    try:
+        # Decodificar el token de actualización
+        token = token.split(" ")[1]
+        data = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
+        email = data["email"]
+
+        # Verificar si el usuario existe
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            return jsonify({"message": "User not found!"}), 404
+
+        # Generar un nuevo access token
+        new_access_token = jwt.encode(
+            {"email": email, "exp": datetime.now(timezone.utc) + timedelta(hours=1)},
+            current_app.config["SECRET_KEY"],
+            algorithm="HS256",
+        )
+
+        return jsonify({"access_token": new_access_token}), 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({"message": "Refresh token expired"}), 401
+    except jwt.InvalidTokenError as e:
+        return jsonify({"message": f"Invalid token: {str(e)}"}), 401
+# =====================================
 # RUTAS DE AUTENTICACIÓN
 # =====================================
 
@@ -85,7 +113,6 @@ def login():
     # platform = data.get('platform')
     # if platform != "android" and platform != "ios":
     #     return jsonify({'message': 'Plataforma incorrecta'}), 400
-
     # Obtener el usuario por email
 
     user = UserService.get_user_by_email(data['email'])
@@ -179,7 +206,6 @@ def get_user(current_user):
     else:
             # Verifica si el usuario registrado es un invitado
         if hasattr(current_user, "is_guest") and current_user.is_guest:
-            print("Es invitado segundo?", current_user.is_guest)
             return {"message": "Acceso denegado: solo usuarios registrados pueden acceder a esta ruta."}, 403
     return jsonify(current_user.serialize())
 
@@ -187,14 +213,10 @@ def get_user(current_user):
 @auth_blueprint.route('/users', methods=['GET'])
 @token_required
 def get_all_users(current_user=None):
-    """
-    - Si token_required = "false" y no envías token => current_user=None => lógica antigua
-    - Si llega un token de invitado => dict con is_guest
-    - Si llega token de usuario => current_user es User
-    """
+
     if current_user is None:
         # Sin token (modo antiguo)
-        return jsonify({"message": "Versión antigua: sin token, vista limitada de usuarios"}), 200
+        return jsonify({"message": "Debes ingresar un token para solicitar los usuarios."}), 200
     
     if isinstance(current_user, dict) and current_user.get('is_guest'):
         return {"message": "Invitado no puede ver la lista completa de usuarios."}, 403
@@ -245,7 +267,7 @@ def reset_password_request():
 
     reset_code = generate_reset_code()
     user.reset_code = reset_code
-    user.reset_code_expiration = datetime.datetime.utcnow() + timedelta(hours=1)
+    user.reset_code_expiration = datetime.now(timezone.utc) + timedelta(hours=1)
     db.session.commit()
 
     reset_url = "https://www.cobquecurapp.cl/reset_password"
@@ -268,7 +290,7 @@ def reset_password():
     if not user:
         return jsonify({'message': 'User not found'}), 404
 
-    if user.reset_code != code or user.reset_code_expiration < datetime.datetime.utcnow():
+    if user.reset_code != code or user.reset_code_expiration < datetime.now(timezone.utc):
         return jsonify({'message': 'Invalid or expired reset code'}), 400
 
     hashed_password = generate_password_hash(new_password)
@@ -283,7 +305,7 @@ def reset_password():
 @token_required
 def signup_partner(current_user):
     if current_user is None:
-        return {"message": "No token, acción no permitida"}, 403
+        return {"message": "No puedes registrar un asociado sin el token correspondiente"}, 403
 
     data = request.get_json()
     image_data = data.pop('image_data', None)
