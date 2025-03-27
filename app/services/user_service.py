@@ -2,7 +2,7 @@ from app.models.user import User
 from app import db
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
-from ..common.email_utils import send_email
+from ..common.email_utils import send_email, send_email_partner
 from flask import render_template
 from ..common.pdf_utils import generate_pdf
 from ..common.image_manager import ImageManager
@@ -85,7 +85,7 @@ class UserService:
             subject = "Bienvenido a nuestra aplicación! CCDT Cobquecura"
             recipients = [email]
             html_body = render_template('email/welcome_email.html', email=email, first_name=first_name)
-            send_email(subject, recipients, html_body, pdf_buffer, pdf_filename)
+            send_email(subject, recipients, first_name, email, pdf_buffer, pdf_filename)
 
         except IntegrityError:
             db.session.rollback()
@@ -172,15 +172,11 @@ class UserService:
         try:
             db.session.commit()
             
-            # Generar PDF con QR
-            # pdf_buffer = generate_pdf(f"{first_name} {last_name}", email)
-            # pdf_filename = f"Credential_{first_name}_{last_name}.pdf"
-            
             # Enviar correo electrónico de bienvenida usando una plantilla HTML
             subject = "Bienvenido a nuestra aplicación! CCDT Cobquecura"
             recipients = [email]
-            html_body = render_template('email/welcome_email_partner.html', email=email, first_name=first_name, password=password )
-            send_email(subject, recipients, html_body)
+            # html_body = render_template('email/welcome_email_partner.html', email=email, first_name=first_name, password=password )
+            send_email_partner(subject, recipients, first_name, email, password)
 
         except IntegrityError:
             db.session.rollback()

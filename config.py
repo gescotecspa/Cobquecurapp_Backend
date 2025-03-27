@@ -4,6 +4,7 @@ import os
 # Carga las variables de entorno desde el archivo .env
 load_dotenv()
 # print(os.getenv('SQLALCHEMY_DATABASE_URI'))
+print(os.getenv('SENDGRID_API_KEY'),'no api sendgrid')
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY')
     SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI')
@@ -15,7 +16,7 @@ class Config:
     SMTP_PASSWORD = os.getenv('SMTP_PASSWORD')
     SMTP_DEFAULT_SENDER = os.getenv('SMTP_DEFAULT_SENDER')
     GCS_BUCKET_NAME = os.getenv('GCS_BUCKET_NAME', 'turismo-app-cobquecura')
-    
+    SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
     # GOOGLE_CREDENTIALS = {
     #     "type": os.getenv('GCP_TYPE'),
     #     "project_id": os.getenv('GCP_PROJECT_ID'),
