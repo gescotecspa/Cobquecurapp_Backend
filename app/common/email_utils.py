@@ -1,7 +1,7 @@
 import base64
 import traceback
 import sendgrid
-from sendgrid.helpers.mail import Mail, Email, To, Content, Attachment
+from sendgrid.helpers.mail import Mail, Attachment
 from flask import current_app
 
 def send_email(subject, recipients, first_name, email, pdf_buffer=None, pdf_filename=None):
