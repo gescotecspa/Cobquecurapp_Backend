@@ -108,7 +108,7 @@ def login():
     if not data or not data.get('email') or not data.get('password'):
         return jsonify({'message': 'Debe ingresar email y contraseña'}), 400
 
-    print(data['email'], data['password'])
+    # print(data['email'], data['password'])
     
     # platform = data.get('platform')
     # if platform != "android" and platform != "ios":
