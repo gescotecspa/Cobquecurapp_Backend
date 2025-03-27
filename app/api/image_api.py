@@ -10,9 +10,9 @@ class ImageResource(Resource):
     def get(self, filename):
         # Definir la ruta completa
         file_path = os.path.join('upload_image', filename)
-        print(f"Ruta completa: {file_path}")
-        print("filename____", filename)
-        print(os.path.exists(file_path))
+        # print(f"Ruta completa: {file_path}")
+        # print("filename____", filename)
+        # print(os.path.exists(file_path))
 
         try:
             # Leer el archivo y devolverlo como respuesta
