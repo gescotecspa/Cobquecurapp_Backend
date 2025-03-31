@@ -1,31 +1,49 @@
 from flask import Blueprint, jsonify
-from app import db  # Importamos la instancia de SQLAlchemy
-from sqlalchemy import text  # Importamos text() para ejecutar consultas SQL
+from app import db
+from sqlalchemy import text
 
-# Crear un Blueprint para métricas
 metrics_bp = Blueprint('metrics_api', __name__)
 
 @metrics_bp.route('/update-metrics', methods=['POST'])
-def update_metrics():
-    """Endpoint para actualizar la tabla metrics manualmente."""
+def update_all_metrics():
+    """Actualiza todas las métricas desde la función insert_all_metrics()."""
     try:
-        query = text("SELECT insert_metrics();")
-        
-        db.session.execute(query)
+        db.session.execute(text("SELECT public.insert_all_metrics();"))
         db.session.commit()
-        
         return jsonify({"message": "Métricas actualizadas correctamente."}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
-@metrics_bp.route('', methods=['GET'])
-def get_metrics():
-    """Endpoint para obtener todas las métricas de la base de datos."""
+
+@metrics_bp.route('/growth', methods=['GET'])
+def get_growth_metrics():
+    """Devuelve métricas de crecimiento de usuarios (metrics_users)."""
     try:
-        query = text("SELECT * FROM get_metrics()")
-        result = db.session.execute(query)
-        metrics = [dict(row) for row in result.mappings()]
-        return jsonify(metrics), 200
+        result = db.session.execute(text("SELECT * FROM metrics_users ORDER BY month"))
+        data = [dict(row) for row in result.mappings()]
+        return jsonify(data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@metrics_bp.route('/conversion', methods=['GET'])
+def get_conversion_metrics():
+    """Devuelve métricas de conversión por categoría (metrics_promotions)."""
+    try:
+        result = db.session.execute(text("SELECT * FROM metrics_promotions ORDER BY published_percentage DESC"))
+        data = [dict(row) for row in result.mappings()]
+        return jsonify(data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@metrics_bp.route('/activity', methods=['GET'])
+def get_activity_metrics():
+    """Devuelve métricas de actividad comercial (metrics_activity)."""
+    try:
+        result = db.session.execute(text("SELECT * FROM metrics_activity ORDER BY avg_promotions_per_active_partner DESC"))
+        data = [dict(row) for row in result.mappings()]
+        return jsonify(data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
