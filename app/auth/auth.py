@@ -267,13 +267,7 @@ def reset_password_request():
 
     reset_code = generate_reset_code()
     user.reset_code = reset_code
-    reset_expiration = datetime.now(timezone.utc) + timedelta(hours=1)
-
-    # Si la fecha no tiene zona horaria, asignar UTC
-    if reset_expiration.tzinfo is None:
-        reset_expiration = reset_expiration.replace(tzinfo=timezone.utc)
-
-    user.reset_code_expiration = reset_expiration
+    user.reset_code_expiration = datetime.now(timezone.utc) + timedelta(hours=1)
     db.session.commit()
 
     reset_url = "https://www.cobquecurapp.cl/reset_password"
@@ -298,17 +292,8 @@ def reset_password():
     user = UserService.get_user_by_email(email)
     if not user:
         return jsonify({'message': 'User not found'}), 404
-    # print(f"Reset code expiration: {user.reset_code_expiration}")
-    # print(f"date now: {datetime.now(timezone.utc)}")
-    if user.reset_code != code or user.reset_code_expiration is None:
-        return jsonify({'message': 'Invalid or expired reset code'}), 400
 
-    if user.reset_code_expiration.tzinfo is not None:
-        user_reset_expiration_utc = user.reset_code_expiration.astimezone(timezone.utc)
-    else:
-        user_reset_expiration_utc = user.reset_code_expiration.replace(tzinfo=timezone.utc)
-
-    if user_reset_expiration_utc < datetime.now(timezone.utc):
+    if user.reset_code != code or user.reset_code_expiration < datetime.now(timezone.utc):
         return jsonify({'message': 'Invalid or expired reset code'}), 400
 
     hashed_password = generate_password_hash(new_password)
